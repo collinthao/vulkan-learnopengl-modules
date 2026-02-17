@@ -1,4 +1,3 @@
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -66,7 +65,7 @@ struct UniformBufferObject
 struct Vertex
 {
 	glm::vec3 pos;
-	glm::vec3 color;
+	glm::vec3 normal;
 
     static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
@@ -79,7 +78,7 @@ struct Vertex
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
+        attributeDescriptions[1].offset = offsetof(Vertex, normal);
 
         return attributeDescriptions;
     }
@@ -93,9 +92,8 @@ struct Vertex
 
 		return bindingDescription;
 	}
-
 };
-
+/*
 const std::vector<Vertex> vertices = 
 { 
 	{{-0.5f, -0.5f, 0.f}, {1.f, 0.f, 0.f}},
@@ -107,49 +105,49 @@ const std::vector<Vertex> vertices =
 	{{-.5f, -.5f, -1.f}, {1.f, 1.f, 1.f}},
 	{{-.5f, .5f, -1.f}, {1.f, 1.f, 1.f}},
 };
+*/
+const std::vector<Vertex> vertices = {
+	{{ -0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}},
+   	{{  0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}}, 
+   	{{  0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}}, 
+   	{{  0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}}, 
+   	{{ -0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}}, 
+   	{{ -0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}}, 
 
-const std::vector<Vertex> verticesForLightingPractice = {
-	{ -0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f},
-   	{  0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, 
-   	{  0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, 
-   	{  0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, 
-   	{ -0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, 
-   	{ -0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, 
+   	{{ -0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f}},
+   	{{  0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f}},
+   	{{  0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f}},
+   	{{  0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f}},
+   	{{ -0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f}},
+   	{{ -0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f}},
 
-   	{ -0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f},
-   	{  0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f},
-   	{  0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f},
-   	{  0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f},
-   	{ -0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f},
-   	{ -0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f, 1.0f},
+   	{{ -0.5f,  0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}},
+   	{{ -0.5f,  0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}},
+   	{{ -0.5f, -0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}},
+   	{{ -0.5f, -0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}},
+   	{{ -0.5f, -0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}},
+   	{{ -0.5f,  0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}},
 
-   	{ -0.5f,  0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f},
-   	{ -0.5f,  0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f},
-   	{ -0.5f, -0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f},
-   	{ -0.5f, -0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f},
-   	{ -0.5f, -0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f},
-   	{ -0.5f,  0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f},
+   	{{  0.5f,  0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}},
+   	{{  0.5f,  0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}},
+   	{{  0.5f, -0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}},
+   	{{  0.5f, -0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}},
+   	{{  0.5f, -0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}},
+   	{{  0.5f,  0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}},
 
-   	{  0.5f,  0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f},
-   	{  0.5f,  0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f},
-   	{  0.5f, -0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f},
-   	{  0.5f, -0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f},
-   	{  0.5f, -0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f},
-   	{  0.5f,  0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f},
+   	{{ -0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}},
+   	{{  0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}},
+   	{{  0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}},
+   	{{  0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}},
+   	{{ -0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}},
+   	{{ -0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}},
 
-   	{ -0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f},
-   	{  0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f},
-   	{  0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f},
-   	{  0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f},
-   	{ -0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f},
-   	{ -0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f},
-
-   	{ -0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f},
-   	{  0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f},
-   	{  0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f},
-   	{  0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f},
-   	{ -0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f},
-   	{ -0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}
+   	{{ -0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}},
+   	{{  0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}},
+   	{{  0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}},
+   	{{  0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}},
+   	{{ -0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}},
+   	{{ -0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}}
 };
 
 const std::vector<uint16_t> indices =
@@ -677,7 +675,6 @@ private:
 		VkBuffer vertexBuffers[] = { vertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 
-
 		VkViewport viewport{};
 		viewport.x = 0.f;
 		viewport.y = 0.f;
@@ -693,7 +690,7 @@ private:
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 		
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		//vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
 
 		for (size_t i = 0; i < MAX_OBJECTS; i++)
@@ -708,7 +705,8 @@ private:
 						&descriptorSets[i][currentFrame], 
 						0, nullptr);
 		
-				vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+				//vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+				vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
 		}
 		vkCmdEndRenderPass(commandBuffer);
@@ -825,9 +823,6 @@ private:
 		{
 			throw std::runtime_error("failed to create render pass!");
 		}
-
-		std::cout << "Renderpass created.\n";
-
 	}
 
 	VkShaderModule createShaderModule(const std::vector<char>& code)
