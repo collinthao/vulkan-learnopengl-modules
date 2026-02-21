@@ -6,11 +6,13 @@ layout (location = 3) in vec3 FragPos;
 
 void main()
 {
-	vec3 fc = vec3(vec2(1.), 0.);
+	vec3 fc = vec3(vec2(1., 0.), 0.);
 		
 	float ambientStrength = 0.1;
 	
 	vec3 ambient = fc * ambientStrength;
+
+	vec3 lightColor = vec3(1.);
 
 	vec3 lightPos = vec3(10., 0., 3.);
 	
@@ -18,7 +20,7 @@ void main()
 
 	float diffuse = max(dot(lightDir, Normal), 0.);
 
-	vec3 finalColor = (ambient + diffuse) * fc;
+	vec3 finalColor = (ambient + diffuse) * lightColor;
 
 	fragColor = vec4(finalColor, 1.);
 }
