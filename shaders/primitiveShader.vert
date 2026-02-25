@@ -6,6 +6,7 @@ layout(binding = 0) uniform UniformBufferObjectModel
 	mat4 view;
 	mat4 proj;
 	mat4 lightModel;
+	vec3 lightPos;
 	vec3 lightColor;
 } ubom;
 
@@ -28,6 +29,6 @@ void main()
     fragTexCoord = inTexCoord;
     Normal = inNormal;
     FragPos = vec3(ubom.model * vec4(inPosition, 1.0));
-    LightPos = vec3(ubom.lightModel * vec4(inPosition, 1.));
+    LightPos = ubom.lightPos;
     LightColor = ubom.lightColor;
 }

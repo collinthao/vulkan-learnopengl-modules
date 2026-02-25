@@ -1,3 +1,4 @@
 ***TODO***
-- Currently the lighting added to the scene is mock data for the position of the light, and there is no object for the light as well, I'll need to create another pipeline for the light so I can set its position and light color separate from the other objects in the scene
 - The lighting is only a phong model without the specular effect, still need to add this`
+- The lighting has some artifacts relating to the positioning of the reflected light coming off of the shader. It looks like it could be reversed vertically and there is also an issue with one side not
+being lit for some reason. Need to look into this.

@@ -71,7 +71,9 @@ struct UniformBufferObjectModel
 	 glm::mat4 view;
 	 glm::mat4 proj;
 	 glm::mat4 lightModel;
+	 glm::vec3 lightPos;
 	 glm::vec3 lightColor;
+	 //glm::vec3 cameraPos;
 };
 
 struct UniformBufferObject
@@ -3152,8 +3154,9 @@ private:
 		ubom.view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 		ubom.lightColor = glm::vec3(1.);
+		ubom.lightPos = glm::vec3(sin(glfwGetTime()) * 2., 0., cos(glfwGetTime()) * 2.);
 		ubom.lightModel = glm::mat4(1.);
-		ubom.lightModel = glm::translate(ubom.lightModel, glm::vec3(sin(glfwGetTime()) * 2., 0., cos(glfwGetTime()) * 2.));
+		ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
 
 		ubom.proj[1][1] *= -1;
 
