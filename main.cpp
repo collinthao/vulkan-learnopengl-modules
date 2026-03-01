@@ -299,6 +299,7 @@ class HelloTriangleApplication
 public:
 	void run()
 	{
+		//runBatchFile();
 		initWindow();
 		initVulkan();
 		mainLoop();
@@ -390,6 +391,21 @@ private:
 	VkImageView colorImageView;
 	std::vector<VkBuffer> shaderStorageBuffers;
 	std::vector<VkDeviceMemory> shaderStorageBuffersMemory;
+
+	void runBatchFile()
+	{
+		const char * command = "cmd.exe /C setup_env.bat";
+		int result = std::system(command);
+		
+		if (result == 0) 
+		{
+			std::cout << "Batch file executed successfully\n";
+		} 
+		else 
+		{
+			std::cout << "Error executing file. " << result << "\n";
+		}
+	}
 
 	void initWindow()
 	{
@@ -2352,9 +2368,9 @@ private:
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;
-		//pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pSetLayouts = nullptr;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &primitiveDescriptorSetLayout;
+		//pipelineLayoutInfo.pSetLayouts = nullptr;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 			
@@ -2392,10 +2408,10 @@ private:
 		pipelineInfo.renderPass = renderPass;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
+		std::cout << "LIGHT\n";
 		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &lightPipeline) != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to create graphics pipeline!");
+			throw std::runtime_error("failed to create light pipeline!");
 		}
 
 		//END
@@ -2515,9 +2531,9 @@ private:
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;
-		//pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pSetLayouts = nullptr;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		//pipelineLayoutInfo.pSetLayouts = nullptr;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 			
@@ -2561,6 +2577,7 @@ private:
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
+		std::cout << "GRAPHICS\n";
 		//END
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -3321,6 +3338,7 @@ private:
 
 int main()
 {
+	std::cout << "HELLO??\n";
 	HelloTriangleApplication app;
 
 	try
