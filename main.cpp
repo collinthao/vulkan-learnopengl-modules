@@ -299,7 +299,6 @@ class HelloTriangleApplication
 public:
 	void run()
 	{
-		runBatchFile();
 		initWindow();
 		initVulkan();
 		mainLoop();
@@ -391,21 +390,6 @@ private:
 	VkImageView colorImageView;
 	std::vector<VkBuffer> shaderStorageBuffers;
 	std::vector<VkDeviceMemory> shaderStorageBuffersMemory;
-
-	void runBatchFile()
-	{
-		const char * command = "cmd.exe /C setup_env.bat";
-		int result = std::system(command);
-		
-		if (result == 0) 
-		{
-			std::cout << "Batch file executed successfully\n";
-		} 
-		else 
-		{
-			std::cout << "Error executing file. " << result << "\n";
-		}
-	}
 
 	void initWindow()
 	{

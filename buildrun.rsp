@@ -1,0 +1,10 @@
+/EHsc
+/std:c++20
+run.cpp
+/link
+user32.lib
+gdi32.lib
+shell32.lib
+ole32.lib
+winmm.lib
+/OUT:"cube.exe"
