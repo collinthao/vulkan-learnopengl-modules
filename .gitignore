@@ -5,7 +5,6 @@
 *.gltf
 *.vsidx
 *.hdr
-*.png
 *.jpg
 *.jpeg
 /.vs/
