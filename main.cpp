@@ -299,7 +299,7 @@ class HelloTriangleApplication
 public:
 	void run()
 	{
-		//runBatchFile();
+		runBatchFile();
 		initWindow();
 		initVulkan();
 		mainLoop();
