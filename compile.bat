@@ -21,7 +21,7 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\
 (
 echo /EHsc
 echo /std:c++20
-echo /DNDEBUG
+::echo /DNDEBUG
 echo /I"%VCPKG_DIR%\packages\glm_x64-windows\include\glm"
 echo /I"%VCPKG_DIR%\packages\glfw3_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\vulkan-headers_x64-windows\include"

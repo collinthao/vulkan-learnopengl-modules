@@ -10,7 +10,7 @@ void main()
 {
 	vec3 norm = normalize(Normal);
 
-	vec3 fc = vec3(vec2(1., 0.), 0.);
+	vec3 fc = vec3(vec2(1., 1.), 0.);
 		
 	float ambientStrength = 0.1;
 	

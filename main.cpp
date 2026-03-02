@@ -43,6 +43,8 @@ float yaw = -90.f;
 float pitch = 0.f;
 float lastX = WIDTH/2;		
 float lastY = HEIGHT/2;		
+float steps = 0.;		
+float verticalSteps = 0.;		
 double lastTime = 0.f;
 bool firstMouse = true;
 glm::vec3 cameraPos = glm::vec3(0., 0., 3.);
@@ -118,10 +120,10 @@ struct Particle
 
 struct Vertex
 {
-	glm::vec3 pos;
-	glm::vec3 color;
-	glm::vec3 normal;
-	glm::vec2 texCoord;
+	alignas(16) glm::vec3 pos;
+	alignas(16) glm::vec3 color;
+	alignas(16) glm::vec3 normal;
+	alignas(16)  glm::vec2 texCoord;
 
     static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
@@ -136,15 +138,16 @@ struct Vertex
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
 
-        attributeDescriptions[2].binding = 0;
+	attributeDescriptions[2].binding = 0;
         attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+        attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, normal);
 
-	attributeDescriptions[3].binding = 0;
+
+        attributeDescriptions[3].binding = 0;
         attributeDescriptions[3].location = 3;
-        attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[3].offset = offsetof(Vertex, normal);
+        attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[3].offset = offsetof(Vertex, texCoord);
 
         return attributeDescriptions;
     }
@@ -166,6 +169,11 @@ struct Vertex
     }
 };
 
+std::ostream& operator<<(std::ostream& out, glm::vec3& vec)
+{
+	return out << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z;
+};
+
 namespace std 
 {
 	template<> struct hash<Vertex>
@@ -181,48 +189,64 @@ namespace std
 };
 
 const std::vector<Vertex> cubeVertices = {
-	{{ -0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
-   	{{  0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
-   	{{  0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
-   	{{ -0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
-   	{{ -0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
+	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
+   	{{  0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
+   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
 
-   	{{ -0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{  0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{  0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{ -0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{ -0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
+   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
+   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
+   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
+   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
 
-   	{{ -0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
 
-   	{{  0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
 
-   	{{ -0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
 
-   	{{ -0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f,  0.5f,  0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f,  0.5f, -0.5f},{ -0.5f, -0.5f, -0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}}
+   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
 };
+
+
+std::vector<uint32_t> cubeIndices = {
+    // BACK (-Z) vertices 0–3
+    0, 1, 2,
+    2, 3, 0,
+
+    // FRONT (+Z) vertices 4–7
+    4, 5, 6,
+    6, 7, 4,
+
+    // LEFT (-X) vertices 8–11
+    8, 9,10,
+   10,11, 8,
+
+    // RIGHT (+X) vertices 12–15
+   12,13,14,
+   14,15,12,
+
+    // BOTTOM (-Y) vertices 16–19
+   16,17,18,
+   18,19,16,
+
+    // TOP (+Y) vertices 20–23
+   20,21,22,
+   22,23,20
+};
+
 
 std::vector<Vertex> modelVertices;
 std::vector<uint32_t> indices;
@@ -290,6 +314,14 @@ void processInput(GLFWwindow * window)
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+		steps += 0.1;
+	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+		steps -= 0.1;
+	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+		verticalSteps += 0.1;
+	if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+		verticalSteps -= 0.1;
 }
 
 void mouse_callback(GLFWwindow * window, double xpos, double ypos);
@@ -1547,7 +1579,8 @@ private:
 	void createIndexBuffer()
 	{
 
-		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		//VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		VkDeviceSize bufferSize = sizeof(cubeIndices[0]) * cubeIndices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
@@ -1555,7 +1588,7 @@ private:
 
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices.data(), (size_t)bufferSize);
+		memcpy(data, cubeIndices.data(), (size_t)bufferSize);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
@@ -1707,25 +1740,27 @@ private:
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, modelGraphicsPipeline);
 
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	//	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipelineLayout, 0, 1, &modelDescriptorSets[currentFrame], 0, nullptr);
 
-	//	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitiveObjectPipeline);
+
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+
+	//	vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPipeline);
 
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
+		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -2313,6 +2348,7 @@ private:
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.f;
+//		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 		rasterizer.cullMode = VK_CULL_MODE_NONE;
 		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizer.depthBiasEnable = VK_FALSE;
@@ -3042,7 +3078,6 @@ private:
 		}
 
 		vkDeviceWaitIdle(device);
-
 	}
 
 	void drawFrame()
@@ -3151,13 +3186,16 @@ private:
 		UniformBufferObjectModel ubom{};
 		
  		ubom.model = glm::mat4(1.);
-		ubom.model = glm::rotate(ubom.model, glm::radians(270.f), glm::vec3(1.0, 0.f, 0.f));
+	//	ubom.model = glm::rotate(ubom.model, glm::radians(270.f), glm::vec3(1.0, 0.f, 0.f));
 		ubom.view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 		ubom.lightColor = glm::vec3(1.);
-		ubom.lightPos = glm::vec3(sin(glfwGetTime()) * 2., 0., cos(glfwGetTime()) * 2.);
+		//ubom.lightPos = glm::vec3(sin(glfwGetTime()) * 2., 0., cos(glfwGetTime()) * 2.);
+		ubom.lightPos = glm::vec3(sin(steps) * 2., cos(verticalSteps) * 2., cos(steps) * 2.);
 		ubom.lightModel = glm::mat4(1.);
 		ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
+
+		std::cout << ubom.lightPos << '\n';
 
 		ubom.proj[1][1] *= -1;
 
