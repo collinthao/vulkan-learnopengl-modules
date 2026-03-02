@@ -3195,8 +3195,6 @@ private:
 		ubom.lightModel = glm::mat4(1.);
 		ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
 
-		std::cout << ubom.lightPos << '\n';
-
 		ubom.proj[1][1] *= -1;
 
 		memcpy(modelUniformBuffersMapped[currentImage], &ubom, sizeof(ubom));
