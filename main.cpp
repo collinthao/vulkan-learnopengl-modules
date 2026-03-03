@@ -69,13 +69,14 @@ const std::vector<const char*> validationLayers =
 
 struct UniformBufferObjectModel
 {
-	 glm::mat4 model;
-	 glm::mat4 view;
-	 glm::mat4 proj;
-	 glm::mat4 lightModel;
-	 glm::vec3 lightPos;
-	 glm::vec3 lightColor;
-	 //glm::vec3 cameraPos;
+	 alignas(16) glm::mat4 model;
+	 alignas(16) glm::mat4 view;
+	 alignas(16) glm::mat4 proj;
+	 alignas(16) glm::mat4 lightModel;
+	 alignas(16) glm::vec3 lightPos;
+	 alignas(16) glm::vec3 lightColor;
+	 alignas(16) glm::vec3 fragColor;
+	 alignas(16) glm::vec3 cameraPos;
 };
 
 struct UniformBufferObject
@@ -3186,15 +3187,14 @@ private:
 		UniformBufferObjectModel ubom{};
 		
  		ubom.model = glm::mat4(1.);
-	//	ubom.model = glm::rotate(ubom.model, glm::radians(270.f), glm::vec3(1.0, 0.f, 0.f));
 		ubom.view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 		ubom.lightColor = glm::vec3(1.);
-		//ubom.lightPos = glm::vec3(sin(glfwGetTime()) * 2., 0., cos(glfwGetTime()) * 2.);
+		ubom.fragColor = glm::vec3(0., 1., 1.);
 		ubom.lightPos = glm::vec3(sin(steps) * 2., cos(verticalSteps) * 2., cos(steps) * 2.);
+		ubom.cameraPos = cameraPos;
 		ubom.lightModel = glm::mat4(1.);
 		ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
-
 		ubom.proj[1][1] *= -1;
 
 		memcpy(modelUniformBuffersMapped[currentImage], &ubom, sizeof(ubom));
