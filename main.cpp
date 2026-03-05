@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <array>
 #include <random>
+#include "camera.cpp"
 
 const uint32_t PARTICLE_COUNT = 8192;
 const uint32_t WIDTH = 800;
@@ -50,6 +51,8 @@ bool firstMouse = true;
 glm::vec3 cameraPos = glm::vec3(0., 0., 3.);
 glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
 glm::vec3 cameraUp = glm::vec3(0.f,1.f, 0.f);
+
+Camera camera(cameraPos, cameraFront, cameraUp);
 
 const std::vector<const char*> deviceExtensions =
 {
@@ -304,17 +307,17 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 void processInput(GLFWwindow * window)
 {
-	const float cameraSpeed = 2.5f * lastFrameTime;
+	camera.cameraSpeed = 2.5f * lastFrameTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		cameraPos += cameraSpeed * cameraFront;
+		camera.move(FORWARD);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
+		camera.move(BACKWARD);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		camera.move(LEFT);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		camera.move(RIGHT);
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 		steps += 0.1;
 	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
@@ -468,6 +471,11 @@ private:
 		createSyncObjects();
 	}
 	
+	void updateStates()
+	{
+		camera.update();
+	}
+
 	void createUniformBuffers()
 	{
 		createGraphicsUniformBuffers();
@@ -3069,9 +3077,8 @@ private:
 		while (!glfwWindowShouldClose(window))
 		{
 			glfwPollEvents();
-			processInput(window);
-
-
+			updateStates();
+			processInput(window);	
 			drawFrame();
 			double currentTime = glfwGetTime();
 			lastFrameTime = (currentTime - lastTime);
@@ -3187,12 +3194,12 @@ private:
 		UniformBufferObjectModel ubom{};
 		
  		ubom.model = glm::mat4(1.);
-		ubom.view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		ubom.view = camera.getViewMatrix();
 		ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 		ubom.lightColor = glm::vec3(1.);
 		ubom.fragColor = glm::vec3(0., 1., 1.);
 		ubom.lightPos = glm::vec3(sin(steps) * 2., cos(verticalSteps) * 2., cos(steps) * 2.);
-		ubom.cameraPos = cameraPos;
+		ubom.cameraPos = camera.cameraPos;
 		ubom.lightModel = glm::mat4(1.);
 		ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
 		ubom.proj[1][1] *= -1;
@@ -3358,7 +3365,6 @@ private:
 
 int main()
 {
-	std::cout << "HELLO??\n";
 	HelloTriangleApplication app;
 
 	try
@@ -3377,31 +3383,5 @@ int main()
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
-	
-	const float sensitivity = 0.1f;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-
-	if (pitch > 89.f) pitch = 89.f;
-	if (pitch < -89.f) pitch = -89.f;
-	
-	glm::vec3 direction;
-	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	direction.y = sin(glm::radians(pitch));
-	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	cameraFront = glm::normalize(direction);
+	camera.move(xpos, ypos);
 }
