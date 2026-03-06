@@ -1,5 +1,13 @@
 #version 450 core
 
+layout (binding = 1) uniform Material
+{
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+	float shininess;
+} u_material;
+
 layout (location = 0) out vec4 fragColor;
 layout (location = 0) in vec3 FragColor;
 layout (location = 2) in vec3 Normal;
@@ -12,32 +20,27 @@ void main()
 {
 	vec3 norm = normalize(Normal);
 
-	vec3 fc = FragColor;
-		
-	float ambientStrength = 0.1;
-	float specularStrength = 0.5;
-
 	vec3 lightColor = LightColor;
 
-	vec3 ambient = ambientStrength * lightColor;
+	vec3 ambient = u_material.ambient * lightColor;
 
 	vec3 lightPos = LightPos;
 	
 	vec3 lightDir = normalize(lightPos - FragPos);
 
-	float diff = max(dot(norm, lightDir), 0.);
+	float diff = max(dot(norm, lightDir), 0.0f);
 	
-	vec3 diffuse = diff * lightColor;
+	vec3 diffuse = (diff * u_material.diffuse) * lightColor;
 
 	vec3 cameraDir = normalize(CameraPos - FragPos);
 
 	vec3 reflectDir = reflect(-lightDir, norm);
 
-	float spec = pow(max(dot(cameraDir, reflectDir), 0.), 32.);
+	float spec = pow(max(dot(cameraDir, reflectDir), 0.0f), u_material.shininess);
 
-	vec3 specular = specularStrength * spec * lightColor;
+	vec3 specular = lightColor * (spec * u_material.specular);
 
-	vec3 finalColor = (ambient + diffuse + specular) * fc;
+	vec3 finalColor = ( ambient +  diffuse +  specular);
 
 	fragColor = vec4(finalColor, 1.);
 }
