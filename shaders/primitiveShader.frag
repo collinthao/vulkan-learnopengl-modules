@@ -8,6 +8,14 @@ layout (binding = 1) uniform Material
 	float shininess;
 } u_material;
 
+layout (binding = 3) uniform Light
+{
+	vec3 ambient; 
+	vec3 diffuse; 
+	vec3 specular; 
+	vec3 position; 
+} u_light;
+
 layout (location = 0) out vec4 fragColor;
 layout (location = 0) in vec3 FragColor;
 layout (location = 2) in vec3 Normal;
@@ -22,15 +30,15 @@ void main()
 
 	vec3 lightColor = LightColor;
 
-	vec3 ambient = u_material.ambient * lightColor;
+	vec3 ambient = u_material.ambient * u_light.ambient;
 
-	vec3 lightPos = LightPos;
+	vec3 lightPos = u_light.position;
 	
 	vec3 lightDir = normalize(lightPos - FragPos);
 
 	float diff = max(dot(norm, lightDir), 0.0f);
 	
-	vec3 diffuse = (diff * u_material.diffuse) * lightColor;
+	vec3 diffuse = (diff * u_material.diffuse) * u_light.diffuse;
 
 	vec3 cameraDir = normalize(CameraPos - FragPos);
 
@@ -38,7 +46,7 @@ void main()
 
 	float spec = pow(max(dot(cameraDir, reflectDir), 0.0f), u_material.shininess);
 
-	vec3 specular = lightColor * (spec * u_material.specular);
+	vec3 specular = u_light.specular * (spec * u_material.specular);
 
 	vec3 finalColor = ( ambient +  diffuse +  specular);
 

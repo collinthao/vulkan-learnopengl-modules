@@ -78,6 +78,14 @@ struct Material
 	alignas(4)float shininess;
 };
 
+struct Light 
+{
+	alignas(16)glm::vec3 ambient;
+	alignas(16)glm::vec3 diffuse;
+	alignas(16)glm::vec3 specular;
+	alignas(16)glm::vec3 position;
+};
+
 struct UniformBufferObjectModel
 {
 	 alignas(16) glm::mat4 model;
@@ -403,16 +411,19 @@ private:
 	std::vector<VkBuffer> modelUniformBuffers;
 	std::vector<VkBuffer> primitiveUniformBuffers;
 	std::vector<VkBuffer> materialUniformBuffers;
+	std::vector<VkBuffer> lightUniformBuffers;
 
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 	std::vector<VkDeviceMemory> modelUniformBuffersMemory;
 	std::vector<VkDeviceMemory> materialUniformBuffersMemory;
 	std::vector<VkDeviceMemory> primitiveUniformBuffersMemory;
+	std::vector<VkDeviceMemory> lightUniformBuffersMemory;
 
 	std::vector<void*> uniformBuffersMapped;
 	std::vector<void*> modelUniformBuffersMapped;
 	std::vector<void*> materialUniformBuffersMapped;
 	std::vector<void*> primitiveUniformBuffersMapped;
+	std::vector<void*> lightUniformBuffersMapped;
 
 	VkDescriptorPool descriptorPool;
 	VkDescriptorPool computeDescriptorPool;
@@ -494,6 +505,7 @@ private:
 		createGraphicsUniformBuffers();
 		createPrimitiveUniformBuffers();
 		createMaterialUniformBuffers();
+		createLightUniformBuffers();
 		createModelUniformBuffers();
 	}
 	
@@ -1250,7 +1262,7 @@ private:
 
 	void createPrimitiveDescriptorPool()
 	{
-		std::array<VkDescriptorPoolSize, 3> poolSizes{};
+		std::array<VkDescriptorPoolSize, 4> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
@@ -1259,6 +1271,9 @@ private:
 
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+		poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1320,12 +1335,17 @@ private:
 			materialsBufferInfo.offset = 0;
 			materialsBufferInfo.range = sizeof(Material);
 	
+			VkDescriptorBufferInfo lightBufferInfo{};
+			lightBufferInfo.buffer = lightUniformBuffers[i];
+			lightBufferInfo.offset = 0;
+			lightBufferInfo.range = sizeof(Light);
+
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfo.imageView = textureImageView;
 			imageInfo.sampler = textureSampler;
 
-			std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+			std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet = primitiveDescriptorSets[i];
 			descriptorWrites[0].dstBinding = 0;
@@ -1350,6 +1370,14 @@ private:
 			descriptorWrites[2].descriptorCount = 1;
 			descriptorWrites[2].pImageInfo = &imageInfo;
 
+			descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[3].dstSet = primitiveDescriptorSets[i];
+			descriptorWrites[3].dstBinding = 3;
+			descriptorWrites[3].dstArrayElement = 0;
+			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[3].descriptorCount = 1;
+			descriptorWrites[3].pBufferInfo = &lightBufferInfo;
+		
 			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
 	}
@@ -1485,6 +1513,24 @@ private:
 				materialUniformBuffers[i], materialUniformBuffersMemory[i]);
 
 			vkMapMemory(device, materialUniformBuffersMemory[i], 0, bufferSize, 0, &materialUniformBuffersMapped[i]);
+
+		}
+	}
+
+	void createLightUniformBuffers()
+	{
+		VkDeviceSize bufferSize = sizeof(Light);
+
+		lightUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+		lightUniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		lightUniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+				lightUniformBuffers[i], lightUniformBuffersMemory[i]);
+
+			vkMapMemory(device, lightUniformBuffersMemory[i], 0, bufferSize, 0, &lightUniformBuffersMapped[i]);
 
 		}
 	}
@@ -2148,6 +2194,12 @@ private:
 
 	void createPrimitiveDescriptorSetLayout()
 	{
+		VkDescriptorSetLayoutBinding lightUBOLayoutBinding{};
+		lightUBOLayoutBinding.binding = 3;
+		lightUBOLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		lightUBOLayoutBinding.descriptorCount = 1;
+		lightUBOLayoutBinding.pImmutableSamplers = nullptr;
+		lightUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 		samplerLayoutBinding.binding = 2;
@@ -2170,7 +2222,7 @@ private:
 		uboLayoutBinding.pImmutableSamplers = nullptr;
 		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 
-		std::array<VkDescriptorSetLayoutBinding, 3> bindings = {uboLayoutBinding, materialUBOLayoutBinding,samplerLayoutBinding};
+		std::array<VkDescriptorSetLayoutBinding, 4> bindings = {uboLayoutBinding, materialUBOLayoutBinding,samplerLayoutBinding, lightUBOLayoutBinding};
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -3251,6 +3303,7 @@ private:
 		UniformBufferObject ubo{};
 		UniformBufferObjectModel ubom{};
 		Material material{};
+		Light light{};
 
  		ubom.model = glm::mat4(1.);
 		ubom.view = camera.getViewMatrix();
@@ -3275,6 +3328,13 @@ private:
 		material.shininess = 32.f; 
 
 		memcpy(materialUniformBuffersMapped[currentImage], &material, sizeof(material));
+
+		light.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+		light.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+		light.specular = glm::vec3(1.f);
+		light.position = ubom.lightPos;	
+
+		memcpy(lightUniformBuffersMapped[currentImage], &light, sizeof(light));
 	}
 
 	void cleanup()
