@@ -2,11 +2,11 @@
 
 layout (binding = 1) uniform Material
 {
-	vec3 ambient;
-	vec3 diffuse;
 	vec3 specular;
 	float shininess;
 } u_material;
+
+layout(binding = 2) uniform sampler2D texSampler;
 
 layout (binding = 3) uniform Light
 {
@@ -16,8 +16,11 @@ layout (binding = 3) uniform Light
 	vec3 position; 
 } u_light;
 
+layout(binding = 4) uniform sampler2D specular;
+
 layout (location = 0) out vec4 fragColor;
 layout (location = 0) in vec3 FragColor;
+layout (location = 1) in vec2 fragTexCoord;
 layout (location = 2) in vec3 Normal;
 layout (location = 3) in vec3 FragPos;
 layout (location = 4) in vec3 LightPos;
@@ -30,7 +33,7 @@ void main()
 
 	vec3 lightColor = LightColor;
 
-	vec3 ambient = u_material.ambient * u_light.ambient;
+	vec3 ambient = vec3(texture(texSampler, fragTexCoord)) * u_light.ambient;
 
 	vec3 lightPos = u_light.position;
 	
@@ -38,7 +41,7 @@ void main()
 
 	float diff = max(dot(norm, lightDir), 0.0f);
 	
-	vec3 diffuse = (diff * u_material.diffuse) * u_light.diffuse;
+	vec3 diffuse = (diff * vec3(texture(texSampler, fragTexCoord))) * u_light.diffuse;
 
 	vec3 cameraDir = normalize(CameraPos - FragPos);
 
@@ -50,5 +53,7 @@ void main()
 
 	vec3 finalColor = ( ambient +  diffuse +  specular);
 
-	fragColor = vec4(finalColor, 1.);
+	vec4 tex = texture(texSampler, fragTexCoord);
+
+	fragColor = vec4(finalColor + vec3(tex), 1.);
 }

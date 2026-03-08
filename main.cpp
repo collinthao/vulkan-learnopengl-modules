@@ -36,7 +36,7 @@ const uint32_t PARTICLE_COUNT = 8192;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 const std::string MODEL_PATH = "models/Viking Room/Viking Room.obj";
-const std::string TEXTURE_PATH = "models/Viking Room/Material_3.png";
+const std::string TEXTURE_PATH = "textures/container.png";
 const int MAX_FRAMES_IN_FLIGHT = 2;
 uint32_t currentFrame = 0;
 float lastFrameTime = 0.f;
@@ -72,8 +72,6 @@ const std::vector<const char*> validationLayers =
 
 struct Material
 {
-	alignas(16)glm::vec3 ambient;
-	alignas(16)glm::vec3 diffuse;
 	alignas(16)glm::vec3 specular;
 	alignas(4)float shininess;
 };
@@ -209,35 +207,35 @@ namespace std
 };
 
 const std::vector<Vertex> cubeVertices = {
-	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
+	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {.0, .0}},
+   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 0.}}, 
    	{{  0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
-   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 1.}}, 
+   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {0., 1.}}, 
 
-   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
+   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {.0, .0}},
+   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., .0}},
    	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
-   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {1., 1.}},
+   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, 1.0f} , {.0, 1.}},
 
-   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 0.}},
    	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {.0, 1.}},
+   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{-1.0f,  0.0f,  0.0f}, {.0, .0}},
 
-   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., .0}},
    	{{  0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {.0, 1.}},
+   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 1.0f,  0.0f,  0.0f}, {0., .0}},
 
-   	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {0., 1.}},
    	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {1., 0.}},
+   	{{ -0.5f, -0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f, -1.0f,  0.0f}, {0., 0.}},
 
-   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
+   	{{ -0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {.0, 1.}},
    	{{  0.5f,  0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
-   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., 1.}},
+   	{{  0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {1., .0}},
+   	{{ -0.5f,  0.5f,  0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  1.0f,  0.0f}, {0., 0.}},
 };
 
 
@@ -441,6 +439,12 @@ private:
 	VkDeviceMemory textureImageMemory;
 	VkImageView textureImageView;
 	VkSampler textureSampler;
+
+	VkImage specularImage;
+	VkDeviceMemory specularImageMemory;
+	VkImageView specularImageView;
+	VkSampler specularSampler;
+
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
@@ -3322,8 +3326,6 @@ private:
 
 		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 
-		material.ambient = glm::vec3(1., 0.5, .31); 	
-		material.diffuse = glm::vec3(1., .5, .31); 	
 		material.specular = glm::vec3(.5); 	
 		material.shininess = 32.f; 
 
