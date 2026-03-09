@@ -83,6 +83,7 @@ struct Light
 	alignas(16)glm::vec3 diffuse;
 	alignas(16)glm::vec3 specular;
 	alignas(16)glm::vec3 position;
+	alignas(16)glm::vec3 direction;
 };
 
 struct UniformBufferObjectModel
@@ -1832,7 +1833,7 @@ private:
 		renderPassInfo.renderArea.extent = swapChainExtent;
 
 		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = {{0.f, 0.f, 0.f, 1.f}};
+		clearValues[0].color = {{.1f, .1f, .1f, 1.f}};
 		clearValues[1].depthStencil = {1.f, 0};
 
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -3359,10 +3360,11 @@ private:
 
 		memcpy(materialUniformBuffersMapped[currentImage], &material, sizeof(material));
 
-		light.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
-		light.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+		light.ambient = glm::vec3(0.4f, 0.4f, 0.4f);
+		light.diffuse = glm::vec3(.9f, .9f, .9f);
 		light.specular = glm::vec3(1.f);
 		light.position = ubom.lightPos;	
+		light.direction = glm::vec3(sin(glfwGetTime()) * 3., -1.f, -0.3f);	
 
 		memcpy(lightUniformBuffersMapped[currentImage], &light, sizeof(light));
 	}

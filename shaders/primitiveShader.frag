@@ -14,6 +14,7 @@ layout (binding = 3) uniform Light
 	vec3 diffuse; 
 	vec3 specular; 
 	vec3 position; 
+	vec3 direction; 
 } u_light;
 
 layout(binding = 4) uniform sampler2D specular;
@@ -40,7 +41,8 @@ void main()
 
 	vec3 lightPos = u_light.position;
 	
-	vec3 lightDir = normalize(lightPos - FragPos);
+	vec3 lightDir = normalize(-u_light.direction);
+	//vec3 lightDir = normalize(lightPos - FragPos);
 
 	float diff = max(dot(norm, lightDir), 0.0f);
 	
