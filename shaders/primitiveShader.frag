@@ -29,11 +29,14 @@ layout (location = 6) in vec3 CameraPos;
 
 void main()
 {
+	vec3 tex = vec3(texture(texSampler, fragTexCoord));
+	vec3 specTex = vec3(texture(specular, fragTexCoord));
+
 	vec3 norm = normalize(Normal);
 
 	vec3 lightColor = LightColor;
 
-	vec3 ambient = vec3(texture(texSampler, fragTexCoord)) * u_light.ambient;
+	vec3 ambient = tex * u_light.ambient;
 
 	vec3 lightPos = u_light.position;
 	
@@ -41,7 +44,7 @@ void main()
 
 	float diff = max(dot(norm, lightDir), 0.0f);
 	
-	vec3 diffuse = (diff * vec3(texture(texSampler, fragTexCoord))) * u_light.diffuse;
+	vec3 diffuse = (diff * tex) * u_light.diffuse;
 
 	vec3 cameraDir = normalize(CameraPos - FragPos);
 
@@ -49,11 +52,9 @@ void main()
 
 	float spec = pow(max(dot(cameraDir, reflectDir), 0.0f), u_material.shininess);
 
-	vec3 specular = u_light.specular * (spec * u_material.specular);
+	vec3 specular = u_light.specular * (spec * specTex);
 
 	vec3 finalColor = ( ambient +  diffuse +  specular);
 
-	vec4 tex = texture(texSampler, fragTexCoord);
-
-	fragColor = vec4(finalColor + vec3(tex), 1.);
+	fragColor = vec4(finalColor, 1.);
 }
