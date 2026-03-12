@@ -32,6 +32,7 @@
 #include <random>
 #include "camera.cpp"
 
+const uint32_t OBJECT_COUNT = 10;
 const uint32_t PARTICLE_COUNT = 8192;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -71,6 +72,13 @@ const std::vector<const char*> validationLayers =
 	const bool enableValidationLayers = true;
 #endif
 
+enum LightType
+{
+	DIRECTIONAL = 0,
+	ATTENUATION = 1,
+	SPOTLIGHT
+};
+
 struct Material
 {
 	alignas(16)glm::vec3 specular;
@@ -84,6 +92,11 @@ struct Light
 	alignas(16)glm::vec3 specular;
 	alignas(16)glm::vec3 position;
 	alignas(16)glm::vec3 direction;
+	alignas(4)float constant;
+	alignas(4)float linear;
+	alignas(4)float quadratic;
+	alignas(4)float cutOff;
+	alignas(4)float outerCutOff;
 };
 
 struct UniformBufferObjectModel
@@ -143,7 +156,7 @@ struct Vertex
 	alignas(16) glm::vec3 pos;
 	alignas(16) glm::vec3 color;
 	alignas(16) glm::vec3 normal;
-	alignas(16)  glm::vec2 texCoord;
+	alignas(16) glm::vec2 texCoord;
 
     static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
@@ -208,6 +221,18 @@ namespace std
 	};
 };
 
+glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+};
 const std::vector<Vertex> cubeVertices = {
 	{{ -0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {.0, .0}},
    	{{  0.5f, -0.5f, -0.5f},{ 0.5f, 0.5f, 0.5f},{ 0.0f,  0.0f, -1.0f}, {1., 0.}}, 
@@ -409,21 +434,21 @@ private:
 	
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkBuffer> modelUniformBuffers;
-	std::vector<VkBuffer> primitiveUniformBuffers;
-	std::vector<VkBuffer> materialUniformBuffers;
-	std::vector<VkBuffer> lightUniformBuffers;
+	std::vector<std::vector<VkBuffer>> primitiveUniformBuffers;
+	std::vector<std::vector<VkBuffer>> materialUniformBuffers;
+	std::vector<std::vector<VkBuffer>> lightUniformBuffers;
 
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 	std::vector<VkDeviceMemory> modelUniformBuffersMemory;
-	std::vector<VkDeviceMemory> materialUniformBuffersMemory;
-	std::vector<VkDeviceMemory> primitiveUniformBuffersMemory;
-	std::vector<VkDeviceMemory> lightUniformBuffersMemory;
+	std::vector<std::vector<VkDeviceMemory>> materialUniformBuffersMemory;
+	std::vector<std::vector<VkDeviceMemory>> primitiveUniformBuffersMemory;
+	std::vector<std::vector<VkDeviceMemory>> lightUniformBuffersMemory;
 
 	std::vector<void*> uniformBuffersMapped;
 	std::vector<void*> modelUniformBuffersMapped;
-	std::vector<void*> materialUniformBuffersMapped;
-	std::vector<void*> primitiveUniformBuffersMapped;
-	std::vector<void*> lightUniformBuffersMapped;
+	std::vector<std::vector<void*>> materialUniformBuffersMapped;
+	std::vector<std::vector<void*>> primitiveUniformBuffersMapped;
+	std::vector<std::vector<void*>> lightUniformBuffersMapped;
 
 	VkDescriptorPool descriptorPool;
 	VkDescriptorPool computeDescriptorPool;
@@ -433,7 +458,7 @@ private:
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> computeDescriptorSets;
 	std::vector<VkDescriptorSet> modelDescriptorSets;
-	std::vector<VkDescriptorSet> primitiveDescriptorSets;
+	std::vector<std::vector<VkDescriptorSet>> primitiveDescriptorSets;
 	
 	bool framebufferResized = false;
 	uint32_t mipLevels;
@@ -1273,25 +1298,25 @@ private:
 	{
 		std::array<VkDescriptorPoolSize, 5> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
 
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
 
 		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[2].descriptorCount = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
 
 		poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[3].descriptorCount = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
 
 		poolSizes[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[4].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[4].descriptorCount = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolInfo.maxSets = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
 
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &primitiveDescriptorPool) != VK_SUCCESS)
 		{
@@ -1322,89 +1347,94 @@ private:
 
 	void createPrimitiveDescriptorSets()
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, primitiveDescriptorSetLayout);
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = primitiveDescriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		allocInfo.pSetLayouts = layouts.data();
+		primitiveDescriptorSets.resize(OBJECT_COUNT);
 
-		primitiveDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-		if (vkAllocateDescriptorSets(device, &allocInfo, primitiveDescriptorSets.data()) != VK_SUCCESS)
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
 		{
-			throw std::runtime_error("Failed to create descriptor sets!");
-		}
+			std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, primitiveDescriptorSetLayout);
+			VkDescriptorSetAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			allocInfo.descriptorPool = primitiveDescriptorPool;
+			allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+			allocInfo.pSetLayouts = layouts.data();
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = primitiveUniformBuffers[i];
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObjectModel);
+			primitiveDescriptorSets[j].resize(MAX_FRAMES_IN_FLIGHT);
+			if (vkAllocateDescriptorSets(device, &allocInfo, primitiveDescriptorSets[j].data()) != VK_SUCCESS)
+			{
+				throw std::runtime_error("Failed to create descriptor sets!");
+			}
 
-			VkDescriptorBufferInfo materialsBufferInfo{};
-			materialsBufferInfo.buffer = materialUniformBuffers[i];
-			materialsBufferInfo.offset = 0;
-			materialsBufferInfo.range = sizeof(Material);
-	
-			VkDescriptorBufferInfo lightBufferInfo{};
-			lightBufferInfo.buffer = lightUniformBuffers[i];
-			lightBufferInfo.offset = 0;
-			lightBufferInfo.range = sizeof(Light);
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				VkDescriptorBufferInfo bufferInfo{};
+				bufferInfo.buffer = primitiveUniformBuffers[j][i];
+				bufferInfo.offset = 0;
+				bufferInfo.range = sizeof(UniformBufferObjectModel);
 
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = textureImageView;
-			imageInfo.sampler = textureSampler;
-
-			VkDescriptorImageInfo specularImageInfo{};
-			specularImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			specularImageInfo.imageView = specularImageView;
-			specularImageInfo.sampler = specularSampler;
-
-
-			std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
-			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = primitiveDescriptorSets[i];
-			descriptorWrites[0].dstBinding = 0;
-			descriptorWrites[0].dstArrayElement = 0;
-			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount = 1;
-			descriptorWrites[0].pBufferInfo = &bufferInfo;
-	
-			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = primitiveDescriptorSets[i];
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pBufferInfo = &materialsBufferInfo;
+				VkDescriptorBufferInfo materialsBufferInfo{};
+				materialsBufferInfo.buffer = materialUniformBuffers[j][i];
+				materialsBufferInfo.offset = 0;
+				materialsBufferInfo.range = sizeof(Material);
 		
-			descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[2].dstSet = primitiveDescriptorSets[i];
-			descriptorWrites[2].dstBinding = 2;
-			descriptorWrites[2].dstArrayElement = 0;
-			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[2].descriptorCount = 1;
-			descriptorWrites[2].pImageInfo = &imageInfo;
+				VkDescriptorBufferInfo lightBufferInfo{};
+				lightBufferInfo.buffer = lightUniformBuffers[j][i];
+				lightBufferInfo.offset = 0;
+				lightBufferInfo.range = sizeof(Light);
 
-			descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[3].dstSet = primitiveDescriptorSets[i];
-			descriptorWrites[3].dstBinding = 3;
-			descriptorWrites[3].dstArrayElement = 0;
-			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[3].descriptorCount = 1;
-			descriptorWrites[3].pBufferInfo = &lightBufferInfo;
+				VkDescriptorImageInfo imageInfo{};
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = textureImageView;
+				imageInfo.sampler = textureSampler;
+
+				VkDescriptorImageInfo specularImageInfo{};
+				specularImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				specularImageInfo.imageView = specularImageView;
+				specularImageInfo.sampler = specularSampler;
+
+
+				std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
+				descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[0].dstSet = primitiveDescriptorSets[j][i];
+				descriptorWrites[0].dstBinding = 0;
+				descriptorWrites[0].dstArrayElement = 0;
+				descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrites[0].descriptorCount = 1;
+				descriptorWrites[0].pBufferInfo = &bufferInfo;
+		
+				descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[1].dstSet = primitiveDescriptorSets[j][i];
+				descriptorWrites[1].dstBinding = 1;
+				descriptorWrites[1].dstArrayElement = 0;
+				descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrites[1].descriptorCount = 1;
+				descriptorWrites[1].pBufferInfo = &materialsBufferInfo;
 			
-			descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[4].dstSet = primitiveDescriptorSets[i];
-			descriptorWrites[4].dstBinding = 4;
-			descriptorWrites[4].dstArrayElement = 0;
-			descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[4].descriptorCount = 1;
-			descriptorWrites[4].pImageInfo = &specularImageInfo;
+				descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[2].dstSet = primitiveDescriptorSets[j][i];
+				descriptorWrites[2].dstBinding = 2;
+				descriptorWrites[2].dstArrayElement = 0;
+				descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrites[2].descriptorCount = 1;
+				descriptorWrites[2].pImageInfo = &imageInfo;
 
-			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+				descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[3].dstSet = primitiveDescriptorSets[j][i];
+				descriptorWrites[3].dstBinding = 3;
+				descriptorWrites[3].dstArrayElement = 0;
+				descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrites[3].descriptorCount = 1;
+				descriptorWrites[3].pBufferInfo = &lightBufferInfo;
+				
+				descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[4].dstSet = primitiveDescriptorSets[j][i];
+				descriptorWrites[4].dstBinding = 4;
+				descriptorWrites[4].dstArrayElement = 0;
+				descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrites[4].descriptorCount = 1;
+				descriptorWrites[4].pImageInfo = &specularImageInfo;
+
+				vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			}
 		}
 	}
 
@@ -1524,58 +1554,79 @@ private:
 		}
 
 	}
-
+	// TODO: create nested for loop for material nad light uniform buffers to handle multiple objects
 	void createMaterialUniformBuffers()
 	{
-		VkDeviceSize bufferSize = sizeof(Material);
+		materialUniformBuffers.resize(OBJECT_COUNT);
+		materialUniformBuffersMemory.resize(OBJECT_COUNT);
+		materialUniformBuffersMapped.resize(OBJECT_COUNT);
 
-		materialUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		materialUniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-		materialUniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
 		{
-			createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-				materialUniformBuffers[i], materialUniformBuffersMemory[i]);
+			VkDeviceSize bufferSize = sizeof(Material);
 
-			vkMapMemory(device, materialUniformBuffersMemory[i], 0, bufferSize, 0, &materialUniformBuffersMapped[i]);
+			materialUniformBuffers[j].resize(MAX_FRAMES_IN_FLIGHT);
+			materialUniformBuffersMemory[j].resize(MAX_FRAMES_IN_FLIGHT);
+			materialUniformBuffersMapped[j].resize(MAX_FRAMES_IN_FLIGHT);
 
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+				materialUniformBuffers[j][i], materialUniformBuffersMemory[j][i]);
+
+				vkMapMemory(device, materialUniformBuffersMemory[j][i], 0, bufferSize, 0, &materialUniformBuffersMapped[j][i]);
+
+			}
 		}
 	}
 
 	void createLightUniformBuffers()
 	{
-		VkDeviceSize bufferSize = sizeof(Light);
+		lightUniformBuffers.resize(OBJECT_COUNT);
+		lightUniformBuffersMemory.resize(OBJECT_COUNT);
+		lightUniformBuffersMapped.resize(OBJECT_COUNT);
 
-		lightUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		lightUniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-		lightUniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
 		{
-			createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-				lightUniformBuffers[i], lightUniformBuffersMemory[i]);
+			VkDeviceSize bufferSize = sizeof(Light);
 
-			vkMapMemory(device, lightUniformBuffersMemory[i], 0, bufferSize, 0, &lightUniformBuffersMapped[i]);
+			lightUniformBuffers[j].resize(MAX_FRAMES_IN_FLIGHT);
+			lightUniformBuffersMemory[j].resize(MAX_FRAMES_IN_FLIGHT);
+			lightUniformBuffersMapped[j].resize(MAX_FRAMES_IN_FLIGHT);
 
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+					lightUniformBuffers[j][i], lightUniformBuffersMemory[j][i]);
+
+				vkMapMemory(device, lightUniformBuffersMemory[j][i], 0, bufferSize, 0, &lightUniformBuffersMapped[j][i]);
+
+			}
 		}
 	}
 
 	void createPrimitiveUniformBuffers()
 	{
-		VkDeviceSize bufferSize = sizeof(UniformBufferObjectModel);
+		primitiveUniformBuffers.resize(OBJECT_COUNT);
+		primitiveUniformBuffersMemory.resize(OBJECT_COUNT);
+		primitiveUniformBuffersMapped.resize(OBJECT_COUNT);
 
-		primitiveUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		primitiveUniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-		primitiveUniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
 		{
-			createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-				primitiveUniformBuffers[i], primitiveUniformBuffersMemory[i]);
+			VkDeviceSize bufferSize = sizeof(UniformBufferObjectModel);
 
-			vkMapMemory(device, primitiveUniformBuffersMemory[i], 0, bufferSize, 0, &primitiveUniformBuffersMapped[i]);
+			primitiveUniformBuffers[j].resize(MAX_FRAMES_IN_FLIGHT);
+			primitiveUniformBuffersMemory[j].resize(MAX_FRAMES_IN_FLIGHT);
+			primitiveUniformBuffersMapped[j].resize(MAX_FRAMES_IN_FLIGHT);
 
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+				primitiveUniformBuffers[j][i], primitiveUniformBuffersMemory[j][i]);
+
+				vkMapMemory(device, primitiveUniformBuffersMemory[j][i], 0, bufferSize, 0, &primitiveUniformBuffersMapped[j][i]);
+
+			}
 		}
 	}
 
@@ -1871,28 +1922,29 @@ private:
 
 	//	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipelineLayout, 0, 1, &modelDescriptorSets[currentFrame], 0, nullptr);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitiveObjectPipeline);
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
+		{
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitiveObjectPipeline);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitivePipelineLayout, 0, 1, &primitiveDescriptorSets[currentFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitivePipelineLayout, 0, 1, &primitiveDescriptorSets[j][currentFrame], 0, nullptr);
 
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
 
-	//	vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
+	//		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPipeline);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPipeline);
 
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
-		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+			//vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
-		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
-
+			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
+		}
 		vkCmdEndRenderPass(commandBuffer);
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -3328,50 +3380,65 @@ private:
 
 	void updateUniformBuffer(uint32_t currentImage)
 	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
+		{
+			static auto startTime = std::chrono::high_resolution_clock::now();
 
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+			auto currentTime = std::chrono::high_resolution_clock::now();
+			float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-		UniformBufferObject ubo{};
-		UniformBufferObjectModel ubom{};
-		Material material{};
-		Light light{};
+			UniformBufferObject ubo{};
+			UniformBufferObjectModel ubom{};
+			Material material{};
+			Light light{};
 
- 		ubom.model = glm::mat4(1.);
-		ubom.view = camera.getViewMatrix();
-		ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
-		ubom.lightColor = glm::vec3(1.);
-		ubom.fragColor = glm::vec3(0., 1., 1.);
-		ubom.lightPos = glm::vec3(sin(steps) * 4., cos(verticalSteps) * 4., cos(steps) * 4.);
-		ubom.cameraPos = camera.cameraPos;
-		ubom.lightModel = glm::mat4(1.);
-		ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
-		ubom.proj[1][1] *= -1;
+			ubom.model = glm::mat4(1.);
+			ubom.model = glm::translate(ubom.model, cubePositions[j]);
+			
+			float angle = 20.f * j;
 
-		memcpy(primitiveUniformBuffersMapped[currentImage], &ubom, sizeof(ubom));
+			ubom.model = glm::rotate(ubom.model, glm::radians(angle), glm::vec3(1.f, 0.3f, 0.5f));
 
-		ubo.deltaTime = lastFrameTime * 2.f;
+			ubom.view = camera.getViewMatrix();
+			ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
+			ubom.lightColor = glm::vec3(1.);
+			ubom.fragColor = glm::vec3(0., 1., 1.);
+			ubom.lightPos = glm::vec3(sin(steps) * 4., cos(verticalSteps) * 100., steps * 4.);
+			ubom.cameraPos = camera.cameraPos;
+			ubom.lightModel = glm::mat4(1.);
+			ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
+			ubom.proj[1][1] *= -1;
 
-		memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+			memcpy(primitiveUniformBuffersMapped[j][currentImage], &ubom, sizeof(ubom));
 
-		material.specular = glm::vec3(.5); 	
-		material.shininess = 32.f; 
+			ubo.deltaTime = lastFrameTime * 2.f;
 
-		memcpy(materialUniformBuffersMapped[currentImage], &material, sizeof(material));
+			memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 
-		light.ambient = glm::vec3(0.4f, 0.4f, 0.4f);
-		light.diffuse = glm::vec3(.9f, .9f, .9f);
-		light.specular = glm::vec3(1.f);
-		light.position = ubom.lightPos;	
-		light.direction = glm::vec3(sin(glfwGetTime()) * 3., -1.f, -0.3f);	
+			material.specular = glm::vec3(.5); 	
+			material.shininess = 32.f; 
 
-		memcpy(lightUniformBuffersMapped[currentImage], &light, sizeof(light));
+			memcpy(materialUniformBuffersMapped[j][currentImage], &material, sizeof(material));
+
+			light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+			light.diffuse = glm::vec3(.9f, .9f, .9f);
+			light.specular = glm::vec3(1.f);
+			//light.position = ubom.lightPos;	
+			light.position = camera.cameraPos;	
+			//light.direction = glm::vec3(3., -1.f, -0.3f);	
+			light.direction = camera.cameraFront;	
+			light.constant = 1.f;
+			light.linear = 0.09f;
+			light.quadratic = 0.032f;
+			light.cutOff = glm::cos(glm::radians(12.5f));
+			light.outerCutOff = glm::cos(glm::radians(17.5f));
+
+			memcpy(lightUniformBuffersMapped[j][currentImage], &light, sizeof(light));
+		}
 	}
 
 	void cleanup()
 	{
-
 		cleanupSwapChain();
 
 		vkDestroySampler(device, textureSampler, nullptr);
