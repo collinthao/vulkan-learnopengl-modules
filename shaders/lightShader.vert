@@ -5,8 +5,8 @@ layout(binding = 0) uniform UniformBufferObjectModel
 mat4 model;
 mat4 view;
 mat4 proj;
-mat4 lightModel;
-vec3 lightPos;
+mat4 lightModels[4];
+vec3 lightPositions[4];
 vec3 lightColor;
 vec3 fragColor;
 vec3 cameraPos;

@@ -33,6 +33,7 @@
 #include "camera.cpp"
 
 const uint32_t OBJECT_COUNT = 10;
+const uint32_t MAX_POINT_LIGHTS = 4;
 const uint32_t PARTICLE_COUNT = 8192;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -85,6 +86,25 @@ struct Material
 	alignas(4)float shininess;
 };
 
+struct PointLight
+{
+	alignas(16)glm::vec3 ambient;
+	alignas(16)glm::vec3 diffuse;
+	alignas(16)glm::vec3 specular;
+	alignas(16)glm::vec3 position;
+	alignas(16)glm::vec3 direction;
+	alignas(4)float constant;
+	alignas(4)float linear;
+	alignas(4)float quadratic;
+	alignas(4)float cutOff;
+	alignas(4)float outerCutOff;
+};
+
+struct Lights
+{
+	PointLight pointLights[MAX_POINT_LIGHTS];	
+};
+
 struct Light 
 {
 	alignas(16)glm::vec3 ambient;
@@ -104,11 +124,12 @@ struct UniformBufferObjectModel
 	 alignas(16) glm::mat4 model;
 	 alignas(16) glm::mat4 view;
 	 alignas(16) glm::mat4 proj;
-	 alignas(16) glm::mat4 lightModel;
-	 alignas(16) glm::vec3 lightPos;
+	 alignas(16) glm::mat4 lightModels[MAX_POINT_LIGHTS];
+	 alignas(16) glm::vec3 lightPositions[MAX_POINT_LIGHTS];
 	 alignas(16) glm::vec3 lightColor;
 	 alignas(16) glm::vec3 fragColor;
 	 alignas(16) glm::vec3 cameraPos;
+	 alignas(4)  int index;
 };
 
 struct UniformBufferObject
@@ -481,6 +502,8 @@ private:
 	VkImageView colorImageView;
 	std::vector<VkBuffer> shaderStorageBuffers;
 	std::vector<VkDeviceMemory> shaderStorageBuffersMemory;
+
+	Lights lights;
 
 	void initWindow()
 	{
@@ -1379,7 +1402,7 @@ private:
 				VkDescriptorBufferInfo lightBufferInfo{};
 				lightBufferInfo.buffer = lightUniformBuffers[j][i];
 				lightBufferInfo.offset = 0;
-				lightBufferInfo.range = sizeof(Light);
+				lightBufferInfo.range = sizeof(Lights);
 
 				VkDescriptorImageInfo imageInfo{};
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1588,7 +1611,7 @@ private:
 
 		for (size_t j = 0; j < OBJECT_COUNT; j++)
 		{
-			VkDeviceSize bufferSize = sizeof(Light);
+			VkDeviceSize bufferSize = sizeof(Lights);
 
 			lightUniformBuffers[j].resize(MAX_FRAMES_IN_FLIGHT);
 			lightUniformBuffersMemory[j].resize(MAX_FRAMES_IN_FLIGHT);
@@ -1945,6 +1968,7 @@ private:
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
 		}
+
 		vkCmdEndRenderPass(commandBuffer);
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -2284,7 +2308,7 @@ private:
 		lightUBOLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		lightUBOLayoutBinding.descriptorCount = 1;
 		lightUBOLayoutBinding.pImmutableSamplers = nullptr;
-		lightUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		lightUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 
 		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 		samplerLayoutBinding.binding = 2;
@@ -3390,7 +3414,6 @@ private:
 			UniformBufferObject ubo{};
 			UniformBufferObjectModel ubom{};
 			Material material{};
-			Light light{};
 
 			ubom.model = glm::mat4(1.);
 			ubom.model = glm::translate(ubom.model, cubePositions[j]);
@@ -3403,10 +3426,21 @@ private:
 			ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 			ubom.lightColor = glm::vec3(1.);
 			ubom.fragColor = glm::vec3(0., 1., 1.);
-			ubom.lightPos = glm::vec3(sin(steps) * 4., cos(verticalSteps) * 100., steps * 4.);
+			
+			for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
+			{
+				ubom.lightPositions[i] = glm::vec3(sin(steps) * 4., cos(verticalSteps) * 100., steps * 4.);
+			}
+
 			ubom.cameraPos = camera.cameraPos;
-			ubom.lightModel = glm::mat4(1.);
-			ubom.lightModel = glm::translate(ubom.lightModel, ubom.lightPos);
+			for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
+			{
+	
+			ubom.lightModels[i] = glm::mat4(1.);
+			ubom.lightModels[i] = glm::translate(ubom.lightModels[i], ubom.lightPositions[i]);
+		
+			}
+
 			ubom.proj[1][1] *= -1;
 
 			memcpy(primitiveUniformBuffersMapped[j][currentImage], &ubom, sizeof(ubom));
@@ -3420,20 +3454,27 @@ private:
 
 			memcpy(materialUniformBuffersMapped[j][currentImage], &material, sizeof(material));
 
-			light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-			light.diffuse = glm::vec3(.9f, .9f, .9f);
-			light.specular = glm::vec3(1.f);
-			//light.position = ubom.lightPos;	
-			light.position = camera.cameraPos;	
-			//light.direction = glm::vec3(3., -1.f, -0.3f);	
-			light.direction = camera.cameraFront;	
-			light.constant = 1.f;
-			light.linear = 0.09f;
-			light.quadratic = 0.032f;
-			light.cutOff = glm::cos(glm::radians(12.5f));
-			light.outerCutOff = glm::cos(glm::radians(17.5f));
+			for (size_t i = 0; i < MAX_POINT_LIGHTS; ++i)
+			{
+				PointLight light{};
+					
+				light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+				light.diffuse = glm::vec3(.9f, .9f, .9f);
+				light.specular = glm::vec3(1.f);
+				//light.position = ubom.lightPos;	
+				light.position = glm::vec3(sin(steps) * 4., cos(verticalSteps) * 6., steps * 4.);	
+				//light.direction = glm::vec3(3., -1.f, -0.3f);	
+				light.direction = camera.cameraFront;	
+				light.constant = 1.f;
+				light.linear = 0.09f;
+				light.quadratic = 0.032f;
+				light.cutOff = glm::cos(glm::radians(12.5f));
+				light.outerCutOff = glm::cos(glm::radians(17.5f));
 
-			memcpy(lightUniformBuffersMapped[j][currentImage], &light, sizeof(light));
+				lights.pointLights[i] = light;
+			}
+
+			memcpy(lightUniformBuffersMapped[j][currentImage], &lights, sizeof(lights));
 		}
 	}
 
