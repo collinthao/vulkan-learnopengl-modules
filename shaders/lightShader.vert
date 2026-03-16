@@ -1,22 +1,25 @@
 #version 450 
 
-layout(binding = 0) uniform UniformBufferObjectModel
-{
-mat4 model;
-mat4 view;
-mat4 proj;
-mat4 lightModels[4];
-vec3 lightPositions[4];
-vec3 lightColor;
-vec3 fragColor;
-vec3 cameraPos;
-} ubom;
+layout(binding = 0) uniform PointLight
+{	
+	mat4 model;
+	mat4 view;
+	mat4 projection;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+	vec3 position;
+	vec3 color;
+	float constant;
+	float linear;
+	float quadratic;
+} u_PointLight;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 0) out vec3 lightColor;
 
 void main()
 {
-	gl_Position = ubom.proj * ubom.view * ubom.lightModel * vec4(inPosition, 1.0);	
-	lightColor = ubom.lightColor;
+	gl_Position = u_PointLight.projection * u_PointLight.view * u_PointLight.model * vec4(inPosition, 1.0);	
+	lightColor = u_PointLight.color;
 }
