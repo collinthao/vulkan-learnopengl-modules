@@ -5,6 +5,7 @@
 /I"C:\vcpkg\packages\vulkan-headers_x64-windows\include"
 /I"C:\vcpkg\packages\tinyobjloader_x64-windows\include"
 /I"C:\vcpkg\packages\stb_x64-windows\include"
+/I"C:\vcpkg\packages\assimp_x64-windows\include"
 main.cpp
 /link
 "C:\vcpkg\packages\glfw3_x64-windows\lib\glfw3dll.lib"
@@ -16,6 +17,7 @@ main.cpp
 "C:\vcpkg\packages\glslang_x64-windows\lib\GenericCodeGen.lib"
 "C:\vcpkg\packages\glslang_x64-windows\lib\MachineIndependent.lib"
 "C:\vcpkg\packages\glslang_x64-windows\lib\glslang-default-resource-limits.lib"
+"C:\vcpkg\packages\assimp_x64-windows\lib\assimp-vc143-mt.lib"
 user32.lib
 gdi32.lib
 shell32.lib

@@ -1,4 +1,8 @@
 // TODO: Figure out why the model graphics pipeline's descriptor layouts are not binding to the vertex and fragment shaders,
+#include <assimp/mesh.h>
+#include <assimp/scene.h>
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -17,6 +21,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <algorithm>
@@ -40,6 +45,8 @@ const uint32_t HEIGHT = 600;
 const std::string MODEL_PATH = "models/Viking Room/Viking Room.obj";
 const std::string TEXTURE_PATH = "textures/container.png";
 const std::string SPECULAR_PATH = "textures/container_specular.png";
+const std::string MODEL_TEXTURE_DIRECTORY = "models/Viking Room/textures/";
+uint32_t TEXTURE_COUNT = 0;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 uint32_t currentFrame = 0;
 float lastFrameTime = 0.f;
@@ -246,6 +253,8 @@ std::ostream& operator<<(std::ostream& out, glm::vec3& vec)
 	return out << "x: " << vec.x << " y: " << vec.y << " z: " << vec.z;
 };
 
+namespace fs = std::filesystem;
+
 namespace std 
 {
 	template<> struct hash<Vertex>
@@ -410,6 +419,21 @@ void processInput(GLFWwindow * window)
 
 void mouse_callback(GLFWwindow * window, double xpos, double ypos);
 
+//TODO : Finish importing models through assimp
+bool importModel(const std::string& pFile)
+{
+//	Assimp::IOStream iostream;
+/*
+	const aiScene* scene = importer.ReadFile(pFile,
+			aiProcess_CalcTangentSpace |
+			aiProcess_Triangulate |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_SortByPType);
+*/
+
+	return true;
+}
+
 class HelloTriangleApplication
 {
 public:
@@ -472,7 +496,10 @@ private:
 	
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
-	
+		
+	VkBuffer indexModelBuffer;
+	VkDeviceMemory indexModelBufferMemory;
+
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkBuffer> modelUniformBuffers;
 	std::vector<std::vector<VkBuffer>> primitiveUniformBuffers;
@@ -518,6 +545,11 @@ private:
 	VkImageView specularImageView;
 	VkSampler specularSampler;
 
+	std::vector<VkImage> modelImages;
+	std::vector<VkDeviceMemory> modelImageMemory;
+	std::vector<VkImageView> modelImageViews;
+	std::vector<VkSampler> modelSamplers;
+
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
@@ -560,16 +592,19 @@ private:
 		createColorResources();
 		createDepthResources();
 		createFramebuffers();
+		getTextureCount(MODEL_TEXTURE_DIRECTORY);
 		createTextureImage(TEXTURE_PATH, textureImage, textureImageMemory);
 		createTextureImage(SPECULAR_PATH, specularImage, specularImageMemory);
 		createTextureImageView(textureImage, textureImageView);
 		createTextureImageView(specularImage, specularImageView);
 		createTextureSampler(textureSampler);
 		createTextureSampler(specularSampler);
+		//importModel(MODEL_PATH);
 		loadModel();
 		createShaderStorageBuffers();
 		createVertexBuffers();
 		createIndexBuffer();
+		createModelIndexBuffer();
 		createUniformBuffers();
 		createDescriptorPools();
 		createDescriptorSets();
@@ -583,15 +618,37 @@ private:
 		camera.update();
 	}
 
+	void getTextureCount(const std::string& path)
+	{
+		std::cout << "Getting texture paths...\n";
+		try 
+		{
+			if (fs::is_directory(path)) 
+			{
+				for (const auto& entry : fs::directory_iterator(path))
+				{
+					std::cout << entry.path().filename().string() << '\n';
+				}
+			}
+			else
+			{
+				std::cout << "Not a directory\n";
+			}
+		}
+		catch (const fs::filesystem_error& ex)
+		{
+			std::cerr << "Filesystem error: " << ex.what() << '\n';
+		}	
+
+	}
+
 	void createUniformBuffers()
 	{
 		createGraphicsUniformBuffers();
 		createPrimitiveUniformBuffers();
 		createMaterialUniformBuffers();
-		std::cout << "LIGHT BUFFERS\n";
 		createLightUniformBuffers();
 		createLightObjectUniformBuffers();
-		std::cout << "LIGHT BUFFERS\n";
 		createModelUniformBuffers();
 	}
 	
@@ -600,9 +657,7 @@ private:
 		createGraphicsDescriptorPool();
 		createPrimitiveDescriptorPool();
 		createModelDescriptorPool();
-		std::cout << "LIGHT DESCRIPTOR POOLS\n";
 		createLightDescriptorPool();
-		std::cout << "LIGHT DESCRIPTOR POOLS\n";
 		createComputeDescriptorPool();
 	}
 
@@ -618,9 +673,7 @@ private:
 		createGraphicsDescriptorSets();
 		createPrimitiveDescriptorSets();
 		createModelDescriptorSets();
-		std::cout << "LIGHT DESCRIPTOR SETS\n";
 		createLightDescriptorSets();
-		std::cout << "LIGHT DESCRIPTOR SETS\n";
 		createComputeDescriptorSets();
 	}
 
@@ -629,9 +682,7 @@ private:
 		createDescriptorSetLayout();
 		createPrimitiveDescriptorSetLayout();
 		createModelDescriptorSetLayout();
-		std::cout << "LIGHT DESCRIPTOR SETLAYOUT\n";
 		createLightDescriptorSetLayout();
-		std::cout << "LIGHT DESCRIPTOR SETLAYOUT\n";
 		createComputeDescriptorSetLayout();
 	}
 
@@ -932,6 +983,7 @@ private:
 				};
 
 				vertex.color = {1.f, 1.f, 1.f};
+				vertex.normal = {1.f, 1.f, 1.f};
 
 				if (uniqueVertices.count(vertex) == 0)
 				{
@@ -986,6 +1038,14 @@ private:
 		depthImageView = createImageView(depthImage, textureImageView, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 	}
 
+	void createTextureSamplers(std::vector<VkSampler>& samplers)
+	{
+		for (size_t i = 0; i < TEXTURE_COUNT; i++)
+		{
+			createTextureSampler(samplers[i]);
+		}
+	}
+
 	void createTextureSampler(VkSampler& sampler)
 	{
 		VkSamplerCreateInfo samplerInfo{};
@@ -1013,6 +1073,14 @@ private:
 		if (vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create texture sampler!");
+		}
+	}
+
+	void createTextureImageViews(std::vector<VkImage>& images, std::vector<VkImageView>& imageViews)
+	{
+		for (size_t i = 0; i < TEXTURE_COUNT; i++)
+		{
+			imageViews[0] = createImageView(images[0], imageViews[0],VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 		}
 	}
 
@@ -1269,6 +1337,14 @@ private:
 			1, &barrier);
 
 		endSingleTimeCommands(commandBuffer);
+	}
+
+	void createTextureImages(const std::string imagePath, std::vector<VkImage> images, std::vector<VkDeviceMemory>& imageMemories)
+	{
+		for (size_t i = 0; i < TEXTURE_COUNT; i++)
+		{
+			createTextureImage(imagePath, images[i], imageMemories[i]);
+		}
 	}
 
 	void createTextureImage(const std::string imagePath, VkImage& image, VkDeviceMemory& imageMemory)
@@ -1901,6 +1977,29 @@ private:
 
 	}
 
+	void createModelIndexBuffer()
+	{
+
+		//VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, indices.data(), (size_t)bufferSize);
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexModelBuffer, indexModelBufferMemory);
+		copyBuffer(stagingBuffer, indexModelBuffer, bufferSize);
+		
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+	}
+
 	void createIndexBuffer()
 	{
 
@@ -2059,15 +2158,19 @@ private:
 		
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &shaderStorageBuffers[currentFrame], offsets);
 
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
 		vkCmdDraw(commandBuffer, PARTICLE_COUNT, 1, 0, 0);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, modelGraphicsPipeline);
 
-	//	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+		vkCmdBindIndexBuffer(commandBuffer, indexModelBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipelineLayout, 0, 1, &modelDescriptorSets[currentFrame], 0, nullptr);
+
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		for (size_t j = 0; j < OBJECT_COUNT; j++)
 		{
@@ -3558,6 +3661,18 @@ private:
 
 	void updateUniformBuffer(uint32_t currentImage)
 	{
+		UniformBufferObjectModel mubo{};
+
+		mubo.model = glm::mat4(1.);
+		mubo.model = glm::translate(mubo.model, glm::vec3(1., 5., 1.));
+		mubo.view = camera.getViewMatrix();
+		mubo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
+		mubo.fragColor = glm::vec3(0., 1., 1.);
+	
+		mubo.proj[1][1] *= -1;
+
+		memcpy(modelUniformBuffersMapped[currentImage], &mubo, sizeof(mubo));
+
 		for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
 		{
 			glm::vec3 lightPos = glm::vec3(sin(steps + 3.) + i, cos(verticalSteps + 3. * i), steps + 3. * i);
@@ -3818,3 +3933,4 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	camera.move(xpos, ypos);
 }
+

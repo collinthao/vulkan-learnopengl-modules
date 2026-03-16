@@ -27,6 +27,7 @@ echo /I"%VCPKG_DIR%\packages\glfw3_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\vulkan-headers_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\tinyobjloader_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\stb_x64-windows\include"
+echo /I"%VCPKG_DIR%\packages\assimp_x64-windows\include"
 echo %SOURCE_FILE%
 echo /link
 :: Full paths to all library files
@@ -39,6 +40,7 @@ echo "%VCPKG_DIR%\packages\glslang_x64-windows\lib\glslang.lib"
 echo "%VCPKG_DIR%\packages\glslang_x64-windows\lib\GenericCodeGen.lib"
 echo "%VCPKG_DIR%\packages\glslang_x64-windows\lib\MachineIndependent.lib"
 echo "%VCPKG_DIR%\packages\glslang_x64-windows\lib\glslang-default-resource-limits.lib"
+echo "%VCPKG_DIR%\packages\assimp_x64-windows\lib\assimp-vc143-mt.lib"
 echo user32.lib
 echo gdi32.lib
 echo shell32.lib
@@ -62,12 +64,14 @@ for %%dll in (
     Vulkan-1.dll
     SPIRV-Tools.dll
     glslang.dll
+    assimp-vc143-mt.dll
 ) do (
     for %%libdir in (
         glfw3_x64-windows
         vulkan-loader_x64-windows
         spirv-tools_x64-windows
         glslang_x64-windows
+	assimp_x64-windows
     ) do (
         if exist "%VCPKG_DIR%\packages\%%libdir\bin\%%dll" copy "%VCPKG_DIR%\packages\%%libdir\bin\%%dll" "%BUILD_DIR%"
     )

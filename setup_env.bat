@@ -38,7 +38,7 @@ set SOURCE_FILE=main.cpp
 set OUTPUT_FILE=main.exe
 
 :: vcpkg packages
-set VCPKG_PACKAGES=vulkan glm glfw3 tinyobjloader spirv-tools glslang stb
+set VCPKG_PACKAGES=vulkan glm glfw3 tinyobjloader spirv-tools glslang stb assimp
 
 :: =================================================
 :: 2. Install vcpkg if missing
