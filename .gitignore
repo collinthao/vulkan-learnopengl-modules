@@ -1,4 +1,5 @@
 *.ipch
+*.obj
 *.pdb
 *.fbx
 *.gltf

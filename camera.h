@@ -1,3 +1,14 @@
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <gtx/hash.hpp>
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <chrono>
+#include <iostream>
+
+
+
 enum CameraDirection 
 {
 	FORWARD,

@@ -16,10 +16,16 @@ layout(location = 3) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
+layout(location = 2) out vec3 Normal;
+layout(location = 3) out vec3 CameraPos;
+layout(location = 4) out vec3 FragPos;
 
 void main()
 {
     gl_Position = ubom.proj * ubom.view * ubom.model * vec4(inPosition, 1.0);
-    fragColor = inColor;
+    fragColor = ubom.fragColor;
     fragTexCoord = inTexCoord;
+    Normal = mat3(transpose(inverse(ubom.model)))* inNormal;
+    CameraPos = ubom.cameraPos;
+    FragPos = vec3(ubom.model * vec4(inPosition, 1.));
 }

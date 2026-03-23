@@ -4,7 +4,7 @@ setlocal
 :: -----------------------------
 :: 1. Define variables
 :: -----------------------------
-set SOURCE_FILE=main.cpp
+set SOURCE_FILE=main.cpp camera.cpp model.cpp vertex.cpp
 set OUTPUT_FILE=main.exe
 set RESPONSE_FILE=build.rsp
 set VCPKG_DIR=C:\vcpkg

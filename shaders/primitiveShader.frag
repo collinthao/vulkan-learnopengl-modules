@@ -60,7 +60,6 @@ layout (location = 2) in vec3 Normal;
 layout (location = 3) in vec3 FragPos;
 layout (location = 6) in vec3 CameraPos;
 
-
 vec3 calculatePointLights(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir);
 	
 vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir);
