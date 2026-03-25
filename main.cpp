@@ -72,13 +72,16 @@ Camera camera(cameraPos, cameraFront, cameraUp);
 
 const std::vector<const char*> deviceExtensions =
 {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+
 };
 
 const std::vector<const char*> validationLayers =
 {
 	"VK_LAYER_KHRONOS_validation"
 };
+
 // testing commits
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
@@ -323,6 +326,8 @@ struct QueueFamilyIndices
 	}
 };
 
+
+
 VkResult CreateDebugUtilsMessengerEXT(
 	VkInstance instance, 
 	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
@@ -353,7 +358,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 void processInput(GLFWwindow * window)
 {
-	camera.cameraSpeed = 2.5f * lastFrameTime;
+	camera.cameraSpeed = 10.f * lastFrameTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		camera.move(FORWARD);
@@ -552,7 +557,6 @@ private:
 		createIndexBuffer();
 		createModelIndexBuffers();
 		createUniformBuffers();
-		std::cout << "Finised setup\n";
 		createDescriptorPools();
 		createDescriptorSets();
 		createCommandBuffers();
@@ -568,7 +572,6 @@ private:
 	void createModel()
 	{
 		model = new Model(MODEL_PATH);
-		std::cout << "Creating model...\n";
 		vertexBuffers.resize(model->meshes.size());	
 		vertexBufferMemories.resize(model->meshes.size());	
 		MESH_COUNT = model->meshes.size();
@@ -971,7 +974,8 @@ private:
 
 	void createDepthResources()
 	{
-		VkFormat depthFormat = findDepthFormat();
+		//VkFormat depthFormat = findDepthFormat();
+		VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 		createImage(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
 
 		depthImageView = createImageView(depthImage, textureImageView, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
@@ -2175,7 +2179,7 @@ private:
 		scissor.offset = {0, 0};
 		scissor.extent = swapChainExtent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-		
+
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &shaderStorageBuffers[currentFrame], offsets);
 
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
@@ -2194,8 +2198,6 @@ private:
 		vkCmdBindIndexBuffer(commandBuffer, indexModelBuffers[i], 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipelineLayout, 0, 1, &modelDescriptorSets[i][currentFrame], 0, nullptr);
-
-//	vkCmdDraw(commandBuffer, static_cast<uint32_t>(model->meshes[i].vertices.size()), 1, 0, 0);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(model->meshes[i].indices.size()), 1, 0, 0, 0);
 		}
@@ -2260,7 +2262,6 @@ private:
 
 	void createCommandPool()
 	{
-
 		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
 		VkCommandPoolCreateInfo poolInfo{};
@@ -2328,7 +2329,8 @@ private:
 		colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = findDepthFormat();
+		//depthAttachment.format = findDepthFormat();
+		depthAttachment.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
 		depthAttachment.samples = msaaSamples; 
 		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -2449,7 +2451,7 @@ private:
 
 		std::vector<VkDynamicState> dynamicStates = {
 			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
+			VK_DYNAMIC_STATE_SCISSOR,
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -2511,7 +2513,16 @@ private:
 		pipelineLayoutInfo.pSetLayouts = &modelDescriptorSetLayout;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
-			
+			// stencil info
+		VkStencilOpState stencilOpState{};
+		stencilOpState.failOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.passOp = VK_STENCIL_OP_REPLACE;
+		stencilOpState.depthFailOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.compareOp = VK_COMPARE_OP_ALWAYS;
+		stencilOpState.compareMask = 0xFF;
+		stencilOpState.writeMask = 0xFF;
+		stencilOpState.reference = 1;
+		
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencil.depthTestEnable = VK_TRUE;
@@ -2521,9 +2532,9 @@ private:
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
 		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.stencilTestEnable = VK_FALSE;
-		depthStencil.front = {};
-		depthStencil.back = {};
+		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.front = stencilOpState;
+		depthStencil.back = stencilOpState;
 
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &modelPipelineLayout) != VK_SUCCESS)
 		{
@@ -2680,7 +2691,7 @@ private:
 
 		std::vector<VkDynamicState> dynamicStates = {
 			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
+			VK_DYNAMIC_STATE_SCISSOR,
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -2743,6 +2754,16 @@ private:
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 			
+		// stencil info
+		VkStencilOpState stencilOpState{};
+		stencilOpState.failOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.passOp = VK_STENCIL_OP_REPLACE;
+		stencilOpState.depthFailOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.compareOp = VK_COMPARE_OP_ALWAYS;
+		stencilOpState.compareMask = 0xFF;
+		stencilOpState.writeMask = 0xFF;
+		stencilOpState.reference = 1;
+
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencil.depthTestEnable = VK_TRUE;
@@ -2752,9 +2773,9 @@ private:
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
 		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.stencilTestEnable = VK_FALSE;
-		depthStencil.front = {};
-		depthStencil.back = {};
+		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.front = stencilOpState;
+		depthStencil.back = stencilOpState;
 
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &primitivePipelineLayout) != VK_SUCCESS)
 		{
@@ -2839,7 +2860,7 @@ private:
 
 		std::vector<VkDynamicState> dynamicStates = {
 			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
+			VK_DYNAMIC_STATE_SCISSOR,
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -2906,7 +2927,17 @@ private:
 		//pipelineLayoutInfo.pSetLayouts = nullptr;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
-			
+
+		// stencil info
+		VkStencilOpState stencilOpState{};
+		stencilOpState.failOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.passOp = VK_STENCIL_OP_REPLACE;
+		stencilOpState.depthFailOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.compareOp = VK_COMPARE_OP_ALWAYS;
+		stencilOpState.compareMask = 0xFF;
+		stencilOpState.writeMask = 0xFF;
+		stencilOpState.reference = 1;
+		
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencil.depthTestEnable = VK_TRUE;
@@ -2916,9 +2947,9 @@ private:
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
 		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.stencilTestEnable = VK_FALSE;
-		depthStencil.front = {};
-		depthStencil.back = {};
+		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.front = stencilOpState;
+		depthStencil.back = stencilOpState;
 
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &lightPipelineLayout) != VK_SUCCESS)
 		{
@@ -3002,7 +3033,7 @@ private:
 
 		std::vector<VkDynamicState> dynamicStates = {
 			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
+			VK_DYNAMIC_STATE_SCISSOR,
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -3068,7 +3099,17 @@ private:
 		//pipelineLayoutInfo.pSetLayouts = nullptr;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
-			
+
+		// stencil info
+		VkStencilOpState stencilOpState{};
+		stencilOpState.failOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.passOp = VK_STENCIL_OP_REPLACE;
+		stencilOpState.depthFailOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.compareOp = VK_COMPARE_OP_ALWAYS;
+		stencilOpState.compareMask = 0xFF;
+		stencilOpState.writeMask = 0xFF;
+		stencilOpState.reference = 1;
+
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencil.depthTestEnable = VK_TRUE;
@@ -3078,9 +3119,9 @@ private:
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
 		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.stencilTestEnable = VK_FALSE;
-		depthStencil.front = {};
-		depthStencil.back = {};
+		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.front = stencilOpState;
+		depthStencil.back = stencilOpState;
 
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 		{
@@ -3328,16 +3369,19 @@ private:
 		float queuePriority = 1.f;
 		for (uint32_t queueFamily : uniqueQueueFamilies)
 		{
-	
 			VkDeviceQueueCreateInfo queueCreateInfo{};
 			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queueCreateInfo.queueFamilyIndex = queueFamily;
 			queueCreateInfo.queueCount = 1;
 			queueCreateInfo.pQueuePriorities = &queuePriority;
 			queueCreateInfos.push_back(queueCreateInfo);
-
 		}
 	
+		VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeatures{};
+		extendedDynamicStateFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+		extendedDynamicStateFeatures.extendedDynamicState = VK_TRUE;
+		extendedDynamicStateFeatures.pNext = nullptr;
+
 		VkDeviceCreateInfo createInfo{};
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -3348,6 +3392,7 @@ private:
 		createInfo.pEnabledFeatures = &deviceFeatures;
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+		createInfo.pNext = &extendedDynamicStateFeatures;
 
 		if (enableValidationLayers)
 		{
@@ -3886,14 +3931,14 @@ private:
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-	
+
 		if (enableValidationLayers)
 		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
-	
+
+		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 		return extensions;
-	
 	}
 
 	bool checkValidationLayerSupport()

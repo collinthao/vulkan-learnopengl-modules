@@ -29,7 +29,6 @@ Model::Model(std::string path)
 
 	processNode(scene->mRootNode, scene);
 	
-	std::cout << "FINISHED...\n";
 //	for (size_t i = 0; i < meshes.size() - 1; i++)
 //	{
 //	}

@@ -79,7 +79,7 @@ void main()
 		result += calculatePointLights(lights.pointLights[i], norm, FragPos, cameraDir);	
 	}
 
-	result += calculateSpotLight(lights.spotLight, norm, cameraDir);
+	//result += calculateSpotLight(lights.spotLight, norm, cameraDir);
 
 	fragColor = vec4(result, 1.);
 }

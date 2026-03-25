@@ -34,7 +34,7 @@ public:
 	float pitch = 0.f;
 	float lastX = WIDTH/2;		
 	float lastY = HEIGHT/2;		
-	float cameraSpeed = 2.5;		
+	float cameraSpeed = 5.f;		
 	bool firstMouse = true;
 	glm::vec3 cameraPos;
 	glm::vec3 cameraFront;

@@ -24,7 +24,7 @@ void main()
 {
     gl_Position = ubom.proj * ubom.view * ubom.model * vec4(inPosition, 1.0);
     fragColor = ubom.fragColor;
-    fragTexCoord = inTexCoord;
+    fragTexCoord = vec2(inTexCoord.x, -inTexCoord.y);
     Normal = mat3(transpose(inverse(ubom.model)))* inNormal;
     CameraPos = ubom.cameraPos;
     FragPos = vec3(ubom.model * vec4(inPosition, 1.));
