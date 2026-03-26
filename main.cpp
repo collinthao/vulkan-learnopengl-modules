@@ -410,6 +410,7 @@ private:
 	
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout primitiveDescriptorSetLayout;
+	VkDescriptorSetLayout stencilDescriptorSetLayout;
 	VkDescriptorSetLayout modelDescriptorSetLayout;
 	VkDescriptorSetLayout computeDescriptorSetLayout;
 	VkDescriptorSetLayout lightDescriptorSetLayout;
@@ -417,11 +418,13 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayout computePipelineLayout;
 	VkPipelineLayout modelPipelineLayout;
+	VkPipelineLayout stencilPipelineLayout;
 	VkPipelineLayout primitivePipelineLayout;
 	VkPipelineLayout lightPipelineLayout;
 	
 	VkPipeline graphicsPipeline;
 	VkPipeline modelGraphicsPipeline;
+	VkPipeline stencilPipeline;
 	VkPipeline primitiveObjectPipeline;
 	VkPipeline lightPipeline;
 	VkPipeline computePipeline;
@@ -447,6 +450,7 @@ private:
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<std::vector<VkBuffer>> modelUniformBuffers;
 	std::vector<std::vector<VkBuffer>> primitiveUniformBuffers;
+	std::vector<std::vector<VkBuffer>> stencilUniformBuffers;
 	std::vector<std::vector<VkBuffer>> materialUniformBuffers;
 	std::vector<std::vector<VkBuffer>> lightUniformBuffers;
 	std::vector<std::vector<VkBuffer>> modelLightUniformBuffers;
@@ -456,6 +460,7 @@ private:
 	std::vector<std::vector<VkDeviceMemory>> modelUniformBuffersMemory;
 	std::vector<std::vector<VkDeviceMemory>> materialUniformBuffersMemory;
 	std::vector<std::vector<VkDeviceMemory>> primitiveUniformBuffersMemory;
+	std::vector<std::vector<VkDeviceMemory>> stencilUniformBuffersMemory;
 	std::vector<std::vector<VkDeviceMemory>> lightUniformBuffersMemory;
 	std::vector<std::vector<VkDeviceMemory>> modelLightUniformBuffersMemory;
 	std::vector<std::vector<VkDeviceMemory>> lightObjectUniformBuffersMemory;
@@ -464,6 +469,7 @@ private:
 	std::vector<std::vector<void*>> modelUniformBuffersMapped;
 	std::vector<std::vector<void*>> materialUniformBuffersMapped;
 	std::vector<std::vector<void*>> primitiveUniformBuffersMapped;
+	std::vector<std::vector<void*>> stencilUniformBuffersMapped;
 	std::vector<std::vector<void*>> modelLightUniformBuffersMapped;
 	std::vector<std::vector<void*>> lightUniformBuffersMapped;
 	std::vector<std::vector<void*>> lightObjectUniformBuffersMapped;
@@ -472,12 +478,14 @@ private:
 	VkDescriptorPool computeDescriptorPool;
 	VkDescriptorPool modelDescriptorPool;
 	VkDescriptorPool primitiveDescriptorPool;
+	VkDescriptorPool stencilDescriptorPool;
 	VkDescriptorPool lightDescriptorPool;
 
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> computeDescriptorSets;
 	std::vector<std::vector<VkDescriptorSet>> modelDescriptorSets;
 	std::vector<std::vector<VkDescriptorSet>> primitiveDescriptorSets;
+	std::vector<std::vector<VkDescriptorSet>> stencilDescriptorSets;
 	std::vector<std::vector<VkDescriptorSet>> lightDescriptorSets;
 	
 	bool framebufferResized = false;
@@ -581,6 +589,7 @@ private:
 	{
 		createGraphicsUniformBuffers();
 		createPrimitiveUniformBuffers();
+		createStencilUniformBuffers();
 		createMaterialUniformBuffers();
 		createLightUniformBuffers();
 		createModelLightUniformBuffers();
@@ -592,6 +601,7 @@ private:
 	{
 		createGraphicsDescriptorPool();
 		createPrimitiveDescriptorPool();
+		createStencilDescriptorPool();
 		createModelDescriptorPool();
 		createLightDescriptorPool();
 		createComputeDescriptorPool();
@@ -614,6 +624,7 @@ private:
 	{
 		createGraphicsDescriptorSets();
 		createPrimitiveDescriptorSets();
+		createStencilDescriptorSets();
 		createModelDescriptorSets();
 		createLightDescriptorSets();
 		createComputeDescriptorSets();
@@ -623,6 +634,7 @@ private:
 	{
 		createDescriptorSetLayout();
 		createPrimitiveDescriptorSetLayout();
+		createStencilDescriptorSetLayout();
 		createModelDescriptorSetLayout();
 		createLightDescriptorSetLayout();
 		createComputeDescriptorSetLayout();
@@ -632,6 +644,7 @@ private:
 	{
 		createGraphicsPipeline();
 		createPrimitivePipeline();
+		createStencilPipeline();
 		createLightPipeline();
 		createModelGraphicsPipeline();
 		createComputePipeline();
@@ -1403,6 +1416,23 @@ private:
 		}
 	}
 
+	void createStencilDescriptorPool()
+	{
+		std::array<VkDescriptorPoolSize, 1> poolSizes{};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.pPoolSizes = poolSizes.data();
+		poolInfo.maxSets = static_cast<uint32_t>(OBJECT_COUNT * MAX_FRAMES_IN_FLIGHT);
+
+		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &stencilDescriptorPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+	}
 
 	void createPrimitiveDescriptorPool()
 	{
@@ -1488,6 +1518,47 @@ private:
 				std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
 				descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				descriptorWrites[0].dstSet = lightDescriptorSets[j][i];
+				descriptorWrites[0].dstBinding = 0;
+				descriptorWrites[0].dstArrayElement = 0;
+				descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrites[0].descriptorCount = 1;
+				descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+				vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			}
+		}
+	}
+
+
+	void createStencilDescriptorSets()
+	{
+		stencilDescriptorSets.resize(OBJECT_COUNT);
+
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
+		{
+			std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, stencilDescriptorSetLayout);
+			VkDescriptorSetAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			allocInfo.descriptorPool = stencilDescriptorPool;
+			allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+			allocInfo.pSetLayouts = layouts.data();
+
+			stencilDescriptorSets[j].resize(MAX_FRAMES_IN_FLIGHT);
+			if (vkAllocateDescriptorSets(device, &allocInfo, stencilDescriptorSets[j].data()) != VK_SUCCESS)
+			{
+				throw std::runtime_error("Failed to create descriptor sets!");
+			}
+
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				VkDescriptorBufferInfo bufferInfo{};
+				bufferInfo.buffer = stencilUniformBuffers[j][i];
+				bufferInfo.offset = 0;
+				bufferInfo.range = sizeof(UniformBufferObjectModel);
+
+				std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+				descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[0].dstSet = stencilDescriptorSets[j][i];
 				descriptorWrites[0].dstBinding = 0;
 				descriptorWrites[0].dstArrayElement = 0;
 				descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1826,6 +1897,32 @@ private:
 			}
 		}
 	}
+
+	void createStencilUniformBuffers()
+	{
+		stencilUniformBuffers.resize(OBJECT_COUNT);
+		stencilUniformBuffersMemory.resize(OBJECT_COUNT);
+		stencilUniformBuffersMapped.resize(OBJECT_COUNT);
+
+		for (size_t j = 0; j < OBJECT_COUNT; j++)
+		{
+			VkDeviceSize bufferSize = sizeof(UniformBufferObjectModel);
+
+			stencilUniformBuffers[j].resize(MAX_FRAMES_IN_FLIGHT);
+			stencilUniformBuffersMemory[j].resize(MAX_FRAMES_IN_FLIGHT);
+			stencilUniformBuffersMapped[j].resize(MAX_FRAMES_IN_FLIGHT);
+
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+				stencilUniformBuffers[j][i], stencilUniformBuffersMemory[j][i]);
+
+				vkMapMemory(device, stencilUniformBuffersMemory[j][i], 0, bufferSize, 0, &stencilUniformBuffersMapped[j][i]);
+
+			}
+		}
+	}
+
 
 	void createPrimitiveUniformBuffers()
 	{
@@ -2214,11 +2311,24 @@ private:
 
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
 
+			// STENCIL
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencilPipeline);
+
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencilPipelineLayout, 0, 1, &stencilDescriptorSets[j][currentFrame], 0, nullptr);
+
+			vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
+
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+
 	//		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
 	//
 			//vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
 			//vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
+			
+
 		}
 
 		for (size_t j = 0; j < MAX_POINT_LIGHTS; j++)
@@ -2532,7 +2642,7 @@ private:
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
 		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.stencilTestEnable = VK_FALSE;
 		depthStencil.front = stencilOpState;
 		depthStencil.back = stencilOpState;
 
@@ -2590,6 +2700,28 @@ private:
 		}
 	}
 
+	void createStencilDescriptorSetLayout()
+	{		
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.pImmutableSamplers = nullptr;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings = {uboLayoutBinding};
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		layoutInfo.pBindings = bindings.data();
+
+		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &stencilDescriptorSetLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create descriptor set layout!");
+		}
+	}
+
 	void createPrimitiveDescriptorSetLayout()
 	{	
 		VkDescriptorSetLayoutBinding specularSamplerLayoutBinding{};
@@ -2639,7 +2771,175 @@ private:
 			throw std::runtime_error("Failed to create descriptor set layout!");
 		}
 	}
-	
+		
+	void createStencilPipeline()
+	{
+		auto vertShaderCode = readFile("shaders/stencilVert.spv");
+		auto fragShaderCode = readFile("shaders/stencilFrag.spv");
+
+		VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+		VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = vertShaderModule;
+		vertShaderStageInfo.pName = "main";
+		
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = fragShaderModule;
+		fragShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+		auto bindingDescription = Vertex::getBindingDesciption();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+		VkViewport viewport{};
+		viewport.x = 0.f;
+		viewport.y = 0.f;
+		viewport.width = (float)swapChainExtent.width;
+		viewport.height = (float)swapChainExtent.height;
+		viewport.minDepth = 0.f;
+		viewport.maxDepth = 1.f;
+
+		VkRect2D scissor{};
+		scissor.offset = { 0,0 };
+		scissor.extent = swapChainExtent;
+
+		std::vector<VkDynamicState> dynamicStates = {
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR,
+		};
+
+		VkPipelineDynamicStateCreateInfo dynamicState{};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+		dynamicState.pDynamicStates = dynamicStates.data();
+
+		VkPipelineViewportStateCreateInfo viewportState{};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.scissorCount = 1;
+		
+		VkPipelineRasterizationStateCreateInfo rasterizer{};
+		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizer.depthClampEnable = VK_FALSE;
+		rasterizer.rasterizerDiscardEnable = VK_FALSE;
+		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizer.lineWidth = 1.f;
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizer.depthBiasEnable = VK_FALSE;
+		rasterizer.depthBiasConstantFactor = 0.f;
+		rasterizer.depthBiasClamp = 0.f;
+		rasterizer.depthBiasSlopeFactor = 0.f;
+
+		VkPipelineMultisampleStateCreateInfo multisampling{};
+		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampling.sampleShadingEnable = VK_TRUE;
+		multisampling.rasterizationSamples = msaaSamples;
+		multisampling.minSampleShading = 0.2f;
+		multisampling.pSampleMask = nullptr;
+		multisampling.alphaToCoverageEnable = VK_FALSE;
+		multisampling.alphaToOneEnable = VK_FALSE;
+
+		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		colorBlendAttachment.blendEnable = VK_TRUE;
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+		
+		VkPipelineColorBlendStateCreateInfo colorBlending{};
+		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlending.logicOpEnable = VK_FALSE;
+		colorBlending.logicOp = VK_LOGIC_OP_COPY;
+		colorBlending.attachmentCount = 1;
+		colorBlending.pAttachments = &colorBlendAttachment;
+		colorBlending.blendConstants[0] = 0.f;
+		colorBlending.blendConstants[1] = 0.f;
+		colorBlending.blendConstants[2] = 0.f;
+		colorBlending.blendConstants[3] = 0.f;
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &stencilDescriptorSetLayout;
+		pipelineLayoutInfo.pushConstantRangeCount = 0;
+		pipelineLayoutInfo.pPushConstantRanges = nullptr;
+			
+		// stencil info
+		VkStencilOpState stencilOpState{};
+		stencilOpState.failOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.passOp = VK_STENCIL_OP_REPLACE;
+		stencilOpState.depthFailOp = VK_STENCIL_OP_KEEP;
+		stencilOpState.compareOp = VK_COMPARE_OP_NOT_EQUAL;
+		stencilOpState.compareMask = 0xFF;
+		stencilOpState.writeMask = 0x00;
+		stencilOpState.reference = 1;
+
+		VkPipelineDepthStencilStateCreateInfo depthStencil{};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.depthTestEnable = VK_FALSE;
+		depthStencil.depthWriteEnable = VK_FALSE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthBoundsTestEnable = VK_FALSE;
+		depthStencil.minDepthBounds = 0.f;
+		depthStencil.maxDepthBounds = 1.f;
+		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.front = stencilOpState;
+		depthStencil.back = stencilOpState;
+
+		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &stencilPipelineLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.stageCount = 2; // Two shader stages; vertex and fragment
+		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.pVertexInputState = &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		pipelineInfo.pViewportState = &viewportState;
+		pipelineInfo.pRasterizationState = &rasterizer;
+		pipelineInfo.pMultisampleState = &multisampling;
+		pipelineInfo.pDepthStencilState = &depthStencil;
+		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pDynamicState = &dynamicState;
+		pipelineInfo.layout = stencilPipelineLayout;
+		pipelineInfo.renderPass = renderPass;
+		pipelineInfo.subpass = 0;
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &stencilPipeline) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create primitive graphics pipeline!");
+		}
+
+		//END
+		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	}
+
 	void createPrimitivePipeline()
 	{
 		auto vertShaderCode = readFile("shaders/primitiveVert.spv");
@@ -2772,7 +3072,6 @@ private:
 		depthStencil.depthBoundsTestEnable = VK_FALSE;
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
-		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 		depthStencil.stencilTestEnable = VK_TRUE;
 		depthStencil.front = stencilOpState;
 		depthStencil.back = stencilOpState;
@@ -3825,6 +4124,11 @@ private:
 			ubom.proj[1][1] *= -1;
 
 			memcpy(primitiveUniformBuffersMapped[j][currentImage], &ubom, sizeof(ubom));
+
+			// STENCIL
+			ubom.model = glm::scale(ubom.model, glm::vec3(1.5));
+
+			memcpy(stencilUniformBuffersMapped[j][currentImage], &ubom, sizeof(ubom));
 
 			ubo.deltaTime = lastFrameTime * 2.f;
 
