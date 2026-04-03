@@ -11,4 +11,6 @@ set GLSL_PATH=glslc.exe
 %GLSL_PATH% primitiveShader.frag -o primitiveFrag.spv
 %GLSL_PATH% stencil.vert -o stencilVert.spv
 %GLSL_PATH% stencil.frag -o stencilFrag.spv
+%GLSL_PATH% postprocessing.vert -o postprocessingVert.spv
+%GLSL_PATH% postprocessing.frag -o postprocessingFrag.spv
 pause
