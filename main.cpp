@@ -273,11 +273,6 @@ const std::vector<Vertex> cubeVertices = {
 };
 
 
-std::vector<uint32_t> quadIndices = {
-     0, 1, 2,
-    2, 3, 0,
-};
-
 std::vector<uint32_t> cubeIndices = {
     // BACK (-Z) vertices 0–3
     0, 1, 2,
@@ -304,6 +299,10 @@ std::vector<uint32_t> cubeIndices = {
    22,23,20
 };
 
+std::vector<uint32_t> quadIndices = {
+    4, 5, 6,
+    6, 7, 4,
+};
 
 std::vector<Vertex> modelVertices;
 std::vector<uint32_t> indices;
@@ -1767,7 +1766,7 @@ private:
 		{
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = textureImageView;
+			imageInfo.imageView = swapChainImageViews[i];
 			imageInfo.sampler = textureSampler;
 
 			std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
@@ -1869,6 +1868,7 @@ private:
 		}
 
 	}
+
 	void createMaterialUniformBuffers()
 	{
 		materialUniformBuffers.resize(OBJECT_COUNT);
@@ -2463,6 +2463,8 @@ private:
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, postProcessingPipeline);
 		
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, postProcessingPipelineLayout, 0, 1, &postProcessingDescriptorSets[currentFrame], 0, nullptr);
+
 		vkCmdBindIndexBuffer(commandBuffer, quadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
@@ -3405,6 +3407,7 @@ private:
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	}
 // TODO: create post processing framebuffers; create image to be presented to pp framebuffer; render quad primitive in second render pass
+// QUAD is having trouble rendering, need to fix vertices being sent as well as texture image being sent. May need semaphore
 	void createPostProcessingPipeline()
 	{
 		auto vertShaderCode = readFile("shaders/postprocessingVert.spv");
@@ -3427,8 +3430,8 @@ private:
 
 		VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-		auto bindingDescription = Particle::getBindingDesciption();
-		auto attributeDescriptions = Particle::getAttributeDescriptions();
+		auto bindingDescription = Vertex::getBindingDesciption();
+		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -3478,7 +3481,7 @@ private:
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.f;
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
 		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizer.depthBiasEnable = VK_FALSE;
 		rasterizer.depthBiasConstantFactor = 0.f;
