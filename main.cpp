@@ -908,13 +908,14 @@ private:
 
 	void createOffscreenResources()
 	{
+		VkFormat colorFormat = swapChainImageFormat;
+
 		offScreenImages.resize(swapChainImages.size());
 		offScreenImageViews.resize(swapChainImages.size());
 		offScreenImageMemories.resize(swapChainImages.size());
 
 		for (size_t i = 0; i < swapChainImages.size(); i++)
 		{
-			VkFormat colorFormat = swapChainImageFormat;
 		
 			createImage(swapChainExtent.width,swapChainExtent.height, 1, VK_SAMPLE_COUNT_1_BIT, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offScreenImages[i], offScreenImageMemories[i]);
 			offScreenImageViews[i] = createImageView(offScreenImages[i], textureImageView, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -3908,6 +3909,27 @@ private:
 		createImageViews();
 		createColorResources();
 		createDepthResources();
+		createOffscreenResources();
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			VkDescriptorImageInfo imageInfo{};
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = offScreenImageViews[i];
+			imageInfo.sampler = textureSampler;
+
+			std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet = postProcessingDescriptorSets[i];
+			descriptorWrites[0].dstBinding = 0;
+			descriptorWrites[0].dstArrayElement = 0;
+			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[0].descriptorCount = 1;
+			descriptorWrites[0].pImageInfo = &imageInfo;
+
+			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		}
+
 		createFramebuffers();
 	}
 
