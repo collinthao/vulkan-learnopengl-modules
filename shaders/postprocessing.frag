@@ -43,4 +43,5 @@ void main()
         col += sampleTex[i] * kernel[i];
 	
 	fragColor = vec4(col, 1.);
+	fragColor = texture(texture_sampler, texCoords);
 }

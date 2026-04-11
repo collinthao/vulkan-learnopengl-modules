@@ -13,4 +13,6 @@ set GLSL_PATH=glslc.exe
 %GLSL_PATH% stencil.frag -o stencilFrag.spv
 %GLSL_PATH% postprocessing.vert -o postprocessingVert.spv
 %GLSL_PATH% postprocessing.frag -o postprocessingFrag.spv
+%GLSL_PATH% cubemap.vert -o cubemapVert.spv
+%GLSL_PATH% cubemap.frag -o cubemapFrag.spv
 pause
