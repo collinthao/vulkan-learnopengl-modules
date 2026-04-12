@@ -6,7 +6,12 @@
 /I"C:\vcpkg\packages\tinyobjloader_x64-windows\include"
 /I"C:\vcpkg\packages\stb_x64-windows\include"
 /I"C:\vcpkg\packages\assimp_x64-windows\include"
-main.cpp camera.cpp model.cpp vertex.cpp
+main.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\camera.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\model.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\vertex.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\engine\engine.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\renderer\vulkanRenderer.cpp
 /link
 "C:\vcpkg\packages\glfw3_x64-windows\lib\glfw3dll.lib"
 "C:\vcpkg\packages\vulkan-loader_x64-windows\lib\vulkan-1.lib"

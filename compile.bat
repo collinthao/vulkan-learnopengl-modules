@@ -4,7 +4,7 @@ setlocal
 :: -----------------------------
 :: 1. Define variables
 :: -----------------------------
-set SOURCE_FILE=main.cpp camera.cpp model.cpp vertex.cpp
+set SOURCE_FILE=main.cpp camera.cpp model.cpp vertex.cpp vulkanRenderer.cpp
 set OUTPUT_FILE=main.exe
 set RESPONSE_FILE=build.rsp
 set VCPKG_DIR=C:\vcpkg
@@ -28,7 +28,10 @@ echo /I"%VCPKG_DIR%\packages\vulkan-headers_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\tinyobjloader_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\stb_x64-windows\include"
 echo /I"%VCPKG_DIR%\packages\assimp_x64-windows\include"
-echo %SOURCE_FILE%
+echo main.cpp
+for /r "%BUILD_DIR%" %%f in (*.cpp) do (
+    if /i not "%%~nxf"=="main.cpp" echo %%f
+)
 echo /link
 :: Full paths to all library files
 echo "%VCPKG_DIR%\packages\glfw3_x64-windows\lib\glfw3dll.lib"

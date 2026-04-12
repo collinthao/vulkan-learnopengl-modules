@@ -2,7 +2,7 @@
 #include <assimp/scene.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
-
+#include "./engine/engine.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
@@ -437,6 +437,9 @@ class HelloTriangleApplication
 public:
 	void run()
 	{
+		Engine engine = Engine();
+		engine.init();
+
 		initWindow();
 		initVulkan();
 		mainLoop();
