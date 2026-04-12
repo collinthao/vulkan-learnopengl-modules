@@ -2,11 +2,11 @@
 #define VULKANRENDERER_H
 #include "./renderer.h"
 
-class VulkanRenderer : IRenderer
+class VulkanRenderer : public IRenderer
 {
 	public:
 	VulkanRenderer();
-	virtual void drawFrame();
+	void drawFrame();
 }; 
 
 #endif

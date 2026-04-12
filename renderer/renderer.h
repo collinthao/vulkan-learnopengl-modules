@@ -4,6 +4,7 @@
 class IRenderer
 {
 	public:
+	virtual ~IRenderer(){};
 	virtual void drawFrame() = 0;
 };
 

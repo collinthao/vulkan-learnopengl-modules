@@ -12,6 +12,7 @@ C:\Users\colli\projects\vulkan-learnopengl-modules\model.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\vertex.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\engine\engine.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\renderer\vulkanRenderer.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\windowContext\glfwWindowContext.cpp
 /link
 "C:\vcpkg\packages\glfw3_x64-windows\lib\glfw3dll.lib"
 "C:\vcpkg\packages\vulkan-loader_x64-windows\lib\vulkan-1.lib"

@@ -1,7 +1,10 @@
 #include "./vulkanRenderer.h"
 #include <iostream>
 
-VulkanRenderer::VulkanRenderer(){};
+VulkanRenderer::VulkanRenderer()
+{
+	std::cout << "Renderer initialized\n";
+};
 
 void VulkanRenderer::drawFrame()
 {

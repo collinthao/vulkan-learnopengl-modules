@@ -5,5 +5,5 @@ Engine::Engine(){};
 
 void Engine::init()
 {
-	std::cout << "Initlializing...\n";
+	windowContext->initWindow();
 }
