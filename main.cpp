@@ -1568,8 +1568,6 @@ msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_
 		imageInfo.samples = numSamples;
 		imageInfo.flags = flags;
 
-		std::cout << "Created image with " << arrayLayers << " layers\n";
-
 		if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image!");
@@ -3601,11 +3599,11 @@ msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencil.depthTestEnable = VK_TRUE;
 		depthStencil.depthWriteEnable = VK_TRUE;
-		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		depthStencil.depthBoundsTestEnable = VK_FALSE;
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
-		depthStencil.stencilTestEnable = VK_TRUE;
+		depthStencil.stencilTestEnable = VK_FALSE;
 		depthStencil.front = stencilOpState;
 		depthStencil.back = stencilOpState;
 
@@ -5064,7 +5062,7 @@ msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_
 		cubemapUbo.model = glm::mat4(1.);
 		cubemapUbo.model = glm::translate(cubemapUbo.model, glm::vec3(4., 10., 0.));
 		
-		cubemapUbo.view = camera.getViewMatrix();
+		cubemapUbo.view = glm::mat4(glm::mat3(camera.getViewMatrix()));
 		cubemapUbo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
 		cubemapUbo.proj[1][1] *= -1;
 
