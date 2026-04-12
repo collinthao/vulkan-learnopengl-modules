@@ -27,3 +27,7 @@ void GLFWWindowContext::framebufferResizeCallback(GLFWwindow* window, int width,
 	windowContext->framebufferResized = true;
 }
 
+void* GLFWWindowContext::getWindow()
+{
+	return window;
+}

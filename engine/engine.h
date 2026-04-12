@@ -12,7 +12,6 @@ class Engine
 	std::unique_ptr<IWindowContext> windowContext = std::make_unique<GLFWWindowContext>();
 	
 	void init();
-
 };
 
 #endif

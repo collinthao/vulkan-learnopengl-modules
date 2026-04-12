@@ -14,6 +14,7 @@ class GLFWWindowContext : public IWindowContext
 
 	
 	void initWindow();
+	void* getWindow();
 	void static framebufferResizeCallback(GLFWwindow* window, int width, int height);
 	void static mouse_callback(GLFWwindow * window, double xpos, double ypos);
 };
