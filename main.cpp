@@ -29,7 +29,6 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <set>
 #include <map>
 #include <unordered_map>
 #include <array>
@@ -69,13 +68,6 @@ glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
 glm::vec3 cameraUp = glm::vec3(0.f,1.f, 0.f);
 
 Camera camera(cameraPos, cameraFront, cameraUp);
-
-const std::vector<const char*> deviceExtensions =
-{
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
-
-};
 
 // testing commits
 
@@ -348,24 +340,6 @@ VkBuffer vertexCubemapBuffer;
 std::vector<VkDeviceMemory> vertexBufferMemories;
 VkDeviceMemory vertexCubeBufferMemory;
 VkDeviceMemory vertexCubemapBufferMemory;
-
-struct SwapChainSupportDetails
-{
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
-
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> graphicsAndComputeFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete()
-	{
-		return graphicsAndComputeFamily.has_value() && presentFamily.has_value();
-	}
-};
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
 {
@@ -4734,7 +4708,7 @@ msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		populateDebugMessengerCreateInfo(createInfo);
 
-		if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+		if (VulkanRenderer::CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to set up debug messenger!");
 		}
