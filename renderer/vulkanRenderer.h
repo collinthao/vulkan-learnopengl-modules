@@ -10,6 +10,11 @@
 #include <unordered_map>
 #include <optional>
 #include <iostream>
+#include <limits>
+#include <algorithm>
+#include <array>
+#include <filesystem>
+#include <fstream>
 
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
@@ -53,15 +58,96 @@ class VulkanRenderer : public IRenderer
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSurfaceKHR surface;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+	VkDevice device;
+	VkQueue graphicsAndComputeQueue;
+	VkQueue presentQueue;
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_8_BIT;
+	VkSwapchainKHR swapChain;
+	std::vector<VkImage> swapChainImages;
+	std::vector<VkImage> offScreenImages;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+	std::vector<VkImageView> swapChainImageViews;
+	std::vector<VkImageView> offScreenImageViews;
+	std::vector<VkDeviceMemory> offScreenImageMemories;
+	VkRenderPass renderPass;
+	VkRenderPass postProcessingRenderPass;
+	VkImage textureImage;
+	VkDeviceMemory textureImageMemory;
+	VkDeviceMemory cubemapImageMemory;
+	VkImageView textureImageView;
+	VkSampler textureSampler;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayout primitiveDescriptorSetLayout;
+	VkDescriptorSetLayout stencilDescriptorSetLayout;
+	VkDescriptorSetLayout modelDescriptorSetLayout;
+	VkDescriptorSetLayout computeDescriptorSetLayout;
+	VkDescriptorSetLayout lightDescriptorSetLayout;
+	VkDescriptorSetLayout postProcessingDescriptorSetLayout;
+	VkDescriptorSetLayout cubemapDescriptorSetLayout;
+	
+	VkPipelineLayout pipelineLayout;
+	VkPipelineLayout computePipelineLayout;
+	VkPipelineLayout modelPipelineLayout;
+	VkPipelineLayout stencilPipelineLayout;
+	VkPipelineLayout primitivePipelineLayout;
+	VkPipelineLayout cubemapPipelineLayout;
+	VkPipelineLayout lightPipelineLayout;
+	VkPipelineLayout postProcessingPipelineLayout;
+	
+	VkPipeline graphicsPipeline;
+	VkPipeline modelGraphicsPipeline;
+	VkPipeline stencilPipeline;
+	VkPipeline primitiveObjectPipeline;
+	VkPipeline cubemapPipeline;
+	VkPipeline lightPipeline;
+	VkPipeline computePipeline;
+	VkPipeline postProcessingPipeline;
+	VkCommandPool commandPool;
+
 	void createInstance();
-	void createSurface(GLFWwindow* window);
+	void createSurface(GLFWwindow * window);
 	void setupDebugMessenger();
 	void pickPhysicalDevice();
+	void createLogicalDevice();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	int rateDeviceSuitability(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	void createSwapChain(GLFWwindow * window);
+	void createImageViews();
+	void createRenderPass();
+	void createPostProcessingRenderPass();
+	void createDescriptorSetLayouts();	
+	void createDescriptorSetLayout();
+	void createPrimitiveDescriptorSetLayout();
+	void createStencilDescriptorSetLayout();
+	void createModelDescriptorSetLayout();
+	void createPostProcessingDescriptorSetLayout();
+	void createCubemapDescriptorSetLayout();
+	void createLightDescriptorSetLayout();
+	void createComputeDescriptorSetLayout();
+	void createPipelines();
+	void createGraphicsPipeline();
+	void createPrimitivePipeline();
+	void createStencilPipeline();
+	void createLightPipeline();
+	void createModelGraphicsPipeline();
+	void createPostProcessingPipeline();
+	void createCubemapPipeline();
+	void createComputePipeline();
+	void createCommandPool();
+	void createOffscreenResources();
+	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkImageCreateFlags flags, VkImageType imageType,VkSampleCountFlagBits numSamples,VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkImageLayout imageLayout);
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+	VkShaderModule createShaderModule(const std::vector<char>& code);
+
+	VkImageView createImageView(VkImage image, VkImageView imageView, VkImageViewType viewType, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, uint32_t layerCount);
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow * window);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	VkSampleCountFlagBits getMaxUsableSampleCount();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
@@ -102,5 +188,28 @@ class VulkanRenderer : public IRenderer
 		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 		return VK_FALSE;
 	};
+
+	static std::vector<char> readFile(const std::string& filename)
+	{
+
+		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+		if (!file.is_open())
+		{
+			throw std::runtime_error("failed to open file!");
+		}
+
+		size_t fileSize = (size_t)file.tellg();
+		std::vector<char> buffer(fileSize);
+
+		file.seekg(0);
+		file.read(buffer.data(), fileSize);
+
+		file.close();
+
+		return buffer;
+
+	}
 };
+
 #endif

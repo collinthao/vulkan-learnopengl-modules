@@ -35,6 +35,7 @@
 #include <random>
 #include "camera.h"
 #include "model.h"
+#include "particle.h"
 
 const uint32_t OBJECT_COUNT = 10;
 size_t MESH_COUNT = 0;
@@ -157,41 +158,6 @@ struct UniformBufferObjectModel
 struct UniformBufferObject
 {
 	float deltaTime;
-};
-
-struct Particle
-{
-	glm::vec2 position;
-	glm::vec2 velocity;
-	glm::vec4 color;
-
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
-	{
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
-
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(Particle, position);
-
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Particle, color);
-
-		return attributeDescriptions;
-	}    
-	
-	static VkVertexInputBindingDescription getBindingDesciption()
-    	{
-    	VkVertexInputBindingDescription bindingDescription{};
-    
-    	bindingDescription.binding = 0;
-    	bindingDescription.stride = sizeof(Particle);
-    	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    
-    	return bindingDescription;
-    	}
 };
 
 namespace fs = std::filesystem;
@@ -383,12 +349,12 @@ public:
 	{
 		Engine engine = Engine();
 		engine.init();
-
+/*
 		initWindow();
 		initVulkan();
 		mainLoop();
 		cleanup();
-	}
+*/	}
 
 private:
 	GLFWwindow* window;
