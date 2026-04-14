@@ -15,13 +15,13 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include "../model.h"
 
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else
 	const bool enableValidationLayers = true;
 #endif
-
 const std::vector<const char*> deviceExtensions =
 {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -106,6 +106,25 @@ class VulkanRenderer : public IRenderer
 	VkPipeline postProcessingPipeline;
 	VkCommandPool commandPool;
 
+	VkImage depthImage;
+	VkDeviceMemory depthImageMemory;
+	VkImageView depthImageView;
+
+	VkImage colorImage;
+	VkDeviceMemory colorImageMemory;
+	VkImageView colorImageView;
+
+	std::vector<VkFramebuffer> swapChainFramebuffers;
+	std::vector<VkFramebuffer> offScreenFramebuffers;
+
+	Model * model;
+
+	std::vector<VkBuffer> vertexBuffers;
+	std::vector<VkDeviceMemory> vertexBufferMemories;
+
+	const std::string MODEL_PATH = "models/Sponza-master/sponza.obj";
+	size_t MESH_COUNT = 0;
+
 	void createInstance();
 	void createSurface(GLFWwindow * window);
 	void setupDebugMessenger();
@@ -141,6 +160,10 @@ class VulkanRenderer : public IRenderer
 	void createOffscreenResources();
 	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkImageCreateFlags flags, VkImageType imageType,VkSampleCountFlagBits numSamples,VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkImageLayout imageLayout);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	void createColorResources();
+	void createDepthResources();
+	void createFramebuffers();
+	void createModel();
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 

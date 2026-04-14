@@ -1,7 +1,6 @@
 #include "./vulkanRenderer.h"
 #include <iostream>
 #include "../windowContext/GLFWWindowContext.h"
-#include "../vertex.h"
 #include "../particle.h"
 
 VulkanRenderer::VulkanRenderer()
@@ -11,14 +10,10 @@ VulkanRenderer::VulkanRenderer()
 void VulkanRenderer::init(GLFWwindow* window)
 {
 	createInstance();
-	std::cout << "instance created\n";
 	setupDebugMessenger();
 	createSurface(window);
-	std::cout << "surface created\n";
 	pickPhysicalDevice();
-	std::cout << "physical device chosen\n";
 	createLogicalDevice();
-	std::cout << "logical device chosen\n";
 	createSwapChain(window);
 	createImageViews();
 	createRenderPass();
@@ -27,6 +22,9 @@ void VulkanRenderer::init(GLFWwindow* window)
 	createPipelines();
 	createCommandPool();
 	createOffscreenResources();
+	createColorResources();
+	createDepthResources();
+	createFramebuffers();
 }
 
 void VulkanRenderer::drawFrame()
@@ -2206,7 +2204,6 @@ void VulkanRenderer::createImage(uint32_t width, uint32_t height, uint32_t mipLe
 
 uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
-
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
@@ -2219,6 +2216,84 @@ uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFla
 	}
 
 	throw std::runtime_error("failed to find a suitable memory type!");
+}
 
+void VulkanRenderer::createColorResources()
+{
+	VkFormat colorFormat = swapChainImageFormat;
+	
+	createImage(swapChainExtent.width,swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+	colorImageView = createImageView(colorImage, textureImageView, VK_IMAGE_VIEW_TYPE_2D, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+}
+
+void VulkanRenderer::createDepthResources()
+{
+	//VkFormat depthFormat = findDepthFormat();
+	VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+	createImage(swapChainExtent.width, swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D,
+msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+
+	depthImageView = createImageView(depthImage, textureImageView, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
+}
+
+void VulkanRenderer::createFramebuffers()
+{
+	swapChainFramebuffers.resize(swapChainImageViews.size());
+	offScreenFramebuffers.resize(swapChainImageViews.size());
+
+	for (size_t i = 0; i < swapChainImageViews.size(); i++)
+	{
+		std::array<VkImageView, 3> attachments = { 
+			colorImageView, 
+			depthImageView,
+			offScreenImageViews[i], 
+		};
+		
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = swapChainExtent.width;
+		framebufferInfo.height = swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &offScreenFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		};
+
+	}
+
+	for (size_t i = 0; i < swapChainImageViews.size(); i++)
+	{
+		std::array<VkImageView, 1> attachments = { 
+			swapChainImageViews[i], 
+		};
+		
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = postProcessingRenderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachments.data();
+		framebufferInfo.width = swapChainExtent.width;
+		framebufferInfo.height = swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		};
+
+	}
+
+}
+
+void VulkanRenderer::createModel()
+{
+	model = new Model(MODEL_PATH);
+	vertexBuffers.resize(model->meshes.size());	
+	vertexBufferMemories.resize(model->meshes.size());	
+	MESH_COUNT = model->meshes.size();
 }
 

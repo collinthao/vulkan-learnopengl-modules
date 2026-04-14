@@ -34,18 +34,18 @@
 #include <array>
 #include <random>
 #include "camera.h"
-#include "model.h"
 #include "particle.h"
 
-const uint32_t OBJECT_COUNT = 10;
+
+const std::string MODEL_PATH = "models/Sponza-master/sponza.obj";
 size_t MESH_COUNT = 0;
+const uint32_t OBJECT_COUNT = 10;
 const uint32_t MAX_POINT_LIGHTS = 4;
 const uint32_t PARTICLE_COUNT = 8192;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 const float FAR_PLANE = 400.f;
 //const std::string MODEL_PATH = "models/Viking Room/Viking Room.obj";
-const std::string MODEL_PATH = "models/Sponza-master/sponza.obj";
 const std::string TEXTURE_PATH = "textures/container.png";
 const std::string CUBEMAP_PATH = "textures/skybox/";
 const std::string SPECULAR_PATH = "textures/container_specular.png";
