@@ -7,14 +7,15 @@ class GLFWWindowContext : public IWindowContext
 {
 	public:
 	GLFWWindowContext();
-	bool framebufferResized = false;
-	uint32_t WIDTH = 800;
-	uint32_t HEIGHT = 600;
+	static inline bool framebufferResized = false;
+	static inline uint32_t WIDTH = 800;
+	static inline uint32_t HEIGHT = 600;
 	GLFWwindow* window;
 
-	
 	void initWindow();
 	void* getWindow();
+	static uint32_t getWindowWidth(){return WIDTH;};
+	static uint32_t getWindowHeight(){return HEIGHT;};
 	void static framebufferResizeCallback(GLFWwindow* window, int width, int height);
 	void static mouse_callback(GLFWwindow * window, double xpos, double ypos);
 };

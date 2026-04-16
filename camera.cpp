@@ -11,6 +11,8 @@ Camera::Camera(
 
 void Camera::update()
 {
+
+
 	view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 }
 

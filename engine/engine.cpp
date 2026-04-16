@@ -8,4 +8,13 @@ void Engine::init()
 	windowContext->initWindow();
 	GLFWwindow * window = static_cast<GLFWwindow*>(windowContext->getWindow());
 	renderer->init(window);
+
+	while (!glfwWindowShouldClose(window))
+	{
+		glfwPollEvents();
+		renderer->processInput(window);
+		renderer->drawFrame(window);
+	}
+
+	vkDeviceWaitIdle(*renderer->getDevice());
 }
