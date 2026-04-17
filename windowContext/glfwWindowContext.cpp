@@ -1,8 +1,11 @@
 #include "./glfwWindowContext.h"
 #include <iostream>
-#include "../renderer/vulkanRenderer.h"
+#include "../renderer/vulkanApp.h"
 
-GLFWWindowContext::GLFWWindowContext(){};
+GLFWWindowContext::GLFWWindowContext()
+{
+	initWindow();
+};
 
 void GLFWWindowContext::initWindow()
 {
@@ -19,7 +22,7 @@ void GLFWWindowContext::initWindow()
 
 void GLFWWindowContext::mouse_callback(GLFWwindow * window, double xpos, double ypos)
 {
-	VulkanRenderer::camera.move(xpos, ypos);
+	VulkanApp::camera.move(xpos, ypos);
 }
 
 void GLFWWindowContext::framebufferResizeCallback(GLFWwindow* window, int width, int height)

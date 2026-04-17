@@ -8,10 +8,10 @@ class Engine
 {
 	public:
 	Engine();
-	std::unique_ptr<IRenderer> renderer = std::make_unique<VulkanRenderer>();
 	std::unique_ptr<IWindowContext> windowContext = std::make_unique<GLFWWindowContext>();
+	std::unique_ptr<IRenderer> renderer = std::make_unique<VulkanRenderer>(static_cast<GLFWwindow*>(windowContext->getWindow()));
 	
-	void init();
+	void start();
 };
 
 #endif

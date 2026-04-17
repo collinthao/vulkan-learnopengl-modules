@@ -7,10 +7,10 @@ class IRenderer
 {
 	public:
 	virtual ~IRenderer(){};
-	virtual void init(GLFWwindow* window) = 0;
+	virtual void render(GLFWwindow * window) = 0;
 	virtual void drawFrame(GLFWwindow * window) = 0;
 	virtual void processInput(GLFWwindow * window) = 0;
-	virtual VkDevice* getDevice() = 0;
+	virtual void cleanup(GLFWwindow * window) = 0;
 };
 
 #endif

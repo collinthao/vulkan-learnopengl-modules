@@ -11,6 +11,9 @@ C:\Users\colli\projects\vulkan-learnopengl-modules\camera.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\model.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\vertex.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\engine\engine.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\pipeline\pipeline.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\pipeline\pipelineBuilder.cpp
+C:\Users\colli\projects\vulkan-learnopengl-modules\renderer\vulkanApp.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\renderer\vulkanRenderer.cpp
 C:\Users\colli\projects\vulkan-learnopengl-modules\windowContext\glfwWindowContext.cpp
 /link
