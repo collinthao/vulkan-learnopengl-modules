@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../windowContext/GLFWWindowContext.h"
 #include "../particle.h"
+#include "../vulkanConfig.h"
 
 glm::vec3 VulkanApp::cameraPos = glm::vec3(0., 0., 3.);
 glm::vec3 VulkanApp::cameraFront = glm::vec3(0.f, 0.f, -1.f);
@@ -431,7 +432,7 @@ void VulkanApp::createSwapChain(GLFWwindow * window)
 	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
 
 	swapChainImageFormat = surfaceFormat.format;
-	swapChainExtent = extent;
+	VulkanConfig::swapChainExtent = extent;
 }
 
 VkPresentModeKHR VulkanApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
@@ -904,6 +905,21 @@ void VulkanApp::createComputeDescriptorSetLayout()
 
 void VulkanApp::createPipelines()
 {
+	primitivePipeline = 
+		pipelineBuilder
+		.setShaderPaths("shaders/primitiveVert.spv", "shaders/primitiveFrag.spv")
+		.setBindingDescription(Vertex::getBindingDesciption())
+		.setAttributeDescriptions(Vertex::getAttributeDescriptions())
+		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+		.setMSAASamples(msaaSamples)
+		.setDescriptorSetLayout(primitiveDescriptorSetLayout)
+		.setStencilTest(VK_TRUE)
+		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
+	 	.setDepthTest(VK_TRUE)
+		.setDepthWrite(VK_TRUE)
+		.setRenderPass(renderPass)
+		.build(device);
+
 	createGraphicsPipeline();
 	createPrimitivePipeline();
 	createStencilPipeline();
@@ -954,14 +970,14 @@ void VulkanApp::createStencilPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -1037,6 +1053,10 @@ void VulkanApp::createStencilPipeline()
 	stencilOpState.compareMask = 0xFF;
 	stencilOpState.writeMask = 0x00;
 	stencilOpState.reference = 1;
+	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &stencilPipelineLayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -1049,11 +1069,6 @@ void VulkanApp::createStencilPipeline()
 	depthStencil.stencilTestEnable = VK_TRUE;
 	depthStencil.front = stencilOpState;
 	depthStencil.back = stencilOpState;
-
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &stencilPipelineLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create pipeline layout!");
-	}
 
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -1122,14 +1137,14 @@ void VulkanApp::createCubemapPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -1290,14 +1305,14 @@ void VulkanApp::createPrimitivePipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -1458,14 +1473,14 @@ void VulkanApp::createLightPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -1632,14 +1647,14 @@ void VulkanApp::createPostProcessingPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -1839,14 +1854,14 @@ void VulkanApp::createModelGraphicsPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -2008,14 +2023,14 @@ void VulkanApp::createGraphicsPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
+	viewport.width = (float)VulkanConfig::swapChainExtent.width;
+	viewport.height = (float)VulkanConfig::swapChainExtent.height;
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0,0 };
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -2183,7 +2198,7 @@ void VulkanApp::createOffscreenResources()
 	for (size_t i = 0; i < swapChainImages.size(); i++)
 	{
 	
-		createImage(swapChainExtent.width,swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D,VK_SAMPLE_COUNT_1_BIT, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offScreenImages[i], offScreenImageMemories[i], VK_IMAGE_LAYOUT_UNDEFINED);
+		createImage(VulkanConfig::swapChainExtent.width,VulkanConfig::swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D,VK_SAMPLE_COUNT_1_BIT, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, offScreenImages[i], offScreenImageMemories[i], VK_IMAGE_LAYOUT_UNDEFINED);
 		offScreenImageViews[i] = createImageView(offScreenImages[i], textureImageView, VK_IMAGE_VIEW_TYPE_2D, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
 	}
 }
@@ -2248,7 +2263,7 @@ void VulkanApp::createColorResources()
 {
 	VkFormat colorFormat = swapChainImageFormat;
 	
-	createImage(swapChainExtent.width,swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+	createImage(VulkanConfig::swapChainExtent.width,VulkanConfig::swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
 	colorImageView = createImageView(colorImage, textureImageView, VK_IMAGE_VIEW_TYPE_2D, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
 }
 
@@ -2256,7 +2271,7 @@ void VulkanApp::createDepthResources()
 {
 	//VkFormat depthFormat = findDepthFormat();
 	VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-	createImage(swapChainExtent.width, swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D,
+	createImage(VulkanConfig::swapChainExtent.width, VulkanConfig::swapChainExtent.height, 1, 1,0, VK_IMAGE_TYPE_2D,
 msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
 
 	depthImageView = createImageView(depthImage, textureImageView, VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
@@ -2280,8 +2295,8 @@ void VulkanApp::createFramebuffers()
 		framebufferInfo.renderPass = renderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = swapChainExtent.width;
-		framebufferInfo.height = swapChainExtent.height;
+		framebufferInfo.width = VulkanConfig::swapChainExtent.width;
+		framebufferInfo.height = VulkanConfig::swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &offScreenFramebuffers[i]) != VK_SUCCESS)
@@ -2302,8 +2317,8 @@ void VulkanApp::createFramebuffers()
 		framebufferInfo.renderPass = postProcessingRenderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
-		framebufferInfo.width = swapChainExtent.width;
-		framebufferInfo.height = swapChainExtent.height;
+		framebufferInfo.width = VulkanConfig::swapChainExtent.width;
+		framebufferInfo.height = VulkanConfig::swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
@@ -4045,7 +4060,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	renderPassInfo.renderPass = renderPass;
 	renderPassInfo.framebuffer = offScreenFramebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0,0 };
-	renderPassInfo.renderArea.extent = swapChainExtent;
+	renderPassInfo.renderArea.extent = VulkanConfig::swapChainExtent;
 
 	std::array<VkClearValue, 2> clearValues{};
 	clearValues[0].color = {{.1f, .1f, .1f, 1.f}};
@@ -4065,15 +4080,15 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 	VkViewport viewport{};
 	viewport.x = 0.f;
 	viewport.y = 0.f;
-	viewport.width = static_cast<float>(swapChainExtent.width);
-	viewport.height = static_cast<float>(swapChainExtent.height);
+	viewport.width = static_cast<float>(VulkanConfig::swapChainExtent.width);
+	viewport.height = static_cast<float>(VulkanConfig::swapChainExtent.height);
 	viewport.minDepth = 0.f;
 	viewport.maxDepth = 1.f;
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = {0, 0};
-	scissor.extent = swapChainExtent;
+	scissor.extent = VulkanConfig::swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &shaderStorageBuffers[currentFrame], offsets);
@@ -4100,9 +4115,9 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	for (size_t j = 0; j < OBJECT_COUNT; j++)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitiveObjectPipeline);
+		primitivePipeline.bind(commandBuffer);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitivePipelineLayout, 0, 1, &primitiveDescriptorSets[j][currentFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, primitivePipeline.getLayout(), 0, 1, &primitiveDescriptorSets[j][currentFrame], 0, nullptr);
 
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
@@ -4199,7 +4214,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 		light.model = glm::mat4(1.);
 		light.model = glm::translate(light.model, lightPos);
 		light.view = camera.getViewMatrix();
-		light.projection = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
+		light.projection = glm::perspective(glm::radians(45.f), VulkanConfig::swapChainExtent.width / (float)VulkanConfig::swapChainExtent.height, 0.1f, 100.f);
 		light.projection[1][1] *= -1;
 
 		pointLights[i] = light;
@@ -4216,7 +4231,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 		meshUBO.model = glm::mat4(1.);
 		meshUBO.model = glm::scale(meshUBO.model, glm::vec3(0.1,0.1,0.1));
 		meshUBO.view = camera.getViewMatrix();
-		meshUBO.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, FAR_PLANE);
+		meshUBO.proj = glm::perspective(glm::radians(45.f), VulkanConfig::swapChainExtent.width / (float)VulkanConfig::swapChainExtent.height, 0.1f, FAR_PLANE);
 		meshUBO.fragColor = glm::vec3(0., 1., 1.);
 
 		meshUBO.proj[1][1] *= -1;
@@ -4269,7 +4284,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 		ubom.model = glm::rotate(ubom.model, glm::radians(angle), glm::vec3(1.f, 0.3f, 0.5f));
 
 		ubom.view = camera.getViewMatrix();
-		ubom.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
+		ubom.proj = glm::perspective(glm::radians(45.f), VulkanConfig::swapChainExtent.width / (float)VulkanConfig::swapChainExtent.height, 0.1f, 100.f);
 		ubom.fragColor = glm::vec3(0., 1., 1.);
 	
 		ubom.proj[1][1] *= -1;
@@ -4321,7 +4336,7 @@ void VulkanApp::updateUniformBuffer(uint32_t currentImage)
 	cubemapUbo.model = glm::translate(cubemapUbo.model, glm::vec3(4., 10., 0.));
 	
 	cubemapUbo.view = glm::mat4(glm::mat3(camera.getViewMatrix()));
-	cubemapUbo.proj = glm::perspective(glm::radians(45.f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.f);
+	cubemapUbo.proj = glm::perspective(glm::radians(45.f), VulkanConfig::swapChainExtent.width / (float)VulkanConfig::swapChainExtent.height, 0.1f, 100.f);
 	cubemapUbo.proj[1][1] *= -1;
 
 	memcpy(cubemapUniformBuffersMapped[currentImage], &cubemapUbo, sizeof(cubemapUbo));

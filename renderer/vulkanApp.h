@@ -31,6 +31,7 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include "../camera.h"
+#include "../pipeline/pipelineBuilder.h"
 
 namespace fs = std::filesystem;
 
@@ -162,6 +163,7 @@ class VulkanApp
 {
 	private:
 	VkInstance instance;
+	PipelineBuilder pipelineBuilder{};
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSurfaceKHR surface;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -173,7 +175,6 @@ class VulkanApp
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImage> offScreenImages;
 	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkImageView> offScreenImageViews;
 	std::vector<VkDeviceMemory> offScreenImageMemories;
@@ -202,6 +203,8 @@ class VulkanApp
 	VkPipelineLayout lightPipelineLayout;
 	VkPipelineLayout postProcessingPipelineLayout;
 	
+	Pipeline primitivePipeline; 
+
 	VkPipeline graphicsPipeline;
 	VkPipeline modelGraphicsPipeline;
 	VkPipeline stencilPipeline;
@@ -464,6 +467,7 @@ class VulkanApp
 	static glm::vec3 cameraPos;
 	static glm::vec3 cameraFront;
 	static glm::vec3 cameraUp; 
+	static VkExtent2D swapChainExtent;
 
 	VkDevice* getDevice();
 	VkDevice device;
