@@ -205,12 +205,9 @@ class VulkanApp
 	
 	Pipeline primitivePipeline; 
 	Pipeline basePipeline; 
-	Pipeline sPipeline;
+	Pipeline stencilPipeline;
 
-	VkPipeline graphicsPipeline;
 	VkPipeline modelGraphicsPipeline;
-	VkPipeline stencilPipeline;
-	VkPipeline primitiveObjectPipeline;
 	VkPipeline cubemapPipeline;
 	VkPipeline lightPipeline;
 	VkPipeline computePipeline;
