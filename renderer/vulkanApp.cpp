@@ -915,14 +915,44 @@ void VulkanApp::createPipelines()
 		.setDescriptorSetLayout(primitiveDescriptorSetLayout)
 		.setStencilTest(VK_TRUE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
+		.setStencilWriteMask(0xFF)	
 	 	.setDepthTest(VK_TRUE)
 		.setDepthWrite(VK_TRUE)
 		.setRenderPass(renderPass)
 		.build(device);
 
-	createGraphicsPipeline();
-	createPrimitivePipeline();
-	createStencilPipeline();
+	basePipeline = 
+		pipelineBuilder
+		.setShaderPaths("shaders/vert.spv", "shaders/frag.spv")
+		.setBindingDescription(Vertex::getBindingDesciption())
+		.setAttributeDescriptions(Vertex::getAttributeDescriptions())
+		.setTopology(VK_PRIMITIVE_TOPOLOGY_POINT_LIST)
+		.setMSAASamples(msaaSamples)
+		.setDescriptorSetLayout(descriptorSetLayout)
+		.setStencilTest(VK_TRUE)
+		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
+		.setStencilWriteMask(0xFF)	
+	 	.setDepthTest(VK_TRUE)
+		.setDepthWrite(VK_TRUE)
+		.setRenderPass(renderPass)
+		.build(device);
+
+	sPipeline = 
+		pipelineBuilder
+		.setShaderPaths("shaders/stencilVert.spv", "shaders/stencilFrag.spv")
+		.setBindingDescription(Vertex::getBindingDesciption())
+		.setAttributeDescriptions(Vertex::getAttributeDescriptions())
+		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+		.setMSAASamples(msaaSamples)
+		.setDescriptorSetLayout(stencilDescriptorSetLayout)
+		.setStencilTest(VK_TRUE)
+		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_NOT_EQUAL)	
+		.setStencilWriteMask(0x00)	
+	 	.setDepthTest(VK_FALSE)
+		.setDepthWrite(VK_FALSE)
+		.setRenderPass(renderPass)
+		.build(device);
+
 	createLightPipeline();
 	createModelGraphicsPipeline();
 	createPostProcessingPipeline();
@@ -1053,6 +1083,7 @@ void VulkanApp::createStencilPipeline()
 	stencilOpState.compareMask = 0xFF;
 	stencilOpState.writeMask = 0x00;
 	stencilOpState.reference = 1;
+
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &stencilPipelineLayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create pipeline layout!");
@@ -4071,7 +4102,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	basePipeline.bind(commandBuffer);
 
 	VkBuffer vertexCubeBuffers[] = { vertexCubeBuffer };
 	VkBuffer vertexCubemapBuffers[] = { vertexCubemapBuffer };
@@ -4093,7 +4124,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &shaderStorageBuffers[currentFrame], offsets);
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, basePipeline.getLayout(), 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
 	vkCmdDraw(commandBuffer, PARTICLE_COUNT, 1, 0, 0);
 
@@ -4126,24 +4157,23 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(VulkanApp::cubeIndices.size()), 1, 0, 0, 0);
 
 		// STENCIL
-/*
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencilPipeline);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencilPipelineLayout, 0, 1, &stencilDescriptorSets[j][currentFrame], 0, nullptr);
+		sPipeline.bind(commandBuffer);
+
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sPipeline.getLayout(), 0, 1, &stencilDescriptorSets[j][currentFrame], 0, nullptr);
 
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
-*/
-//		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
-//
-		//vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
+/*
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
 
-		//vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
-		
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexCubeBuffers, offsets);
 
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(cubeVertices.size()), 1, 0, 0);
+*/	
 	}
 
 	for (size_t j = 0; j < MAX_POINT_LIGHTS; j++)

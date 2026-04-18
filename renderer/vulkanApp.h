@@ -204,6 +204,8 @@ class VulkanApp
 	VkPipelineLayout postProcessingPipelineLayout;
 	
 	Pipeline primitivePipeline; 
+	Pipeline basePipeline; 
+	Pipeline sPipeline;
 
 	VkPipeline graphicsPipeline;
 	VkPipeline modelGraphicsPipeline;

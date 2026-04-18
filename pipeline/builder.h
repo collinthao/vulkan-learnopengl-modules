@@ -25,6 +25,7 @@ class Builder
 	virtual Builder& setDescriptorSetLayout(VkDescriptorSetLayout layouts) = 0;
 	virtual Builder& setStencilTest(VkBool32 stencilTest) = 0;
 	virtual Builder& setStencilState(VkStencilOp fail, VkStencilOp pass, VkStencilOp depthFail, VkCompareOp compare) = 0;
+	virtual Builder& setStencilWriteMask(uint32_t mask) = 0;
 	virtual Builder& setDepthTest(VkBool32 depthTest) = 0;
 	virtual Builder& setDepthWrite(VkBool32 depthWrite) = 0;
 	virtual Builder& setRenderPass(VkRenderPass pass) = 0;

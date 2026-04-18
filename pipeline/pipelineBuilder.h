@@ -20,6 +20,7 @@ class PipelineBuilder : private Builder
 	VkBool32 depthWriteEnable;
 	VkStencilOp failOp; 
 	VkStencilOp passOp; 
+	uint32_t stencilWriteMask; 
 	VkStencilOp depthFailOp; 
 	VkCompareOp compareOp;
 	VkRenderPass renderPass;
@@ -106,6 +107,13 @@ class PipelineBuilder : private Builder
 		compareOp = compare;
 		return *this;
 	};
+
+	PipelineBuilder& setStencilWriteMask(uint32_t mask)
+	{
+		stencilWriteMask = mask;
+		return *this;
+	};
+
 	PipelineBuilder& setDepthTest(VkBool32 depthTest)
 	{
 		depthTestEnable = depthTest;
@@ -125,7 +133,6 @@ class PipelineBuilder : private Builder
 	Pipeline build(VkDevice& device)
 	{	
 		VkPipeline pipeline;
-		std::cout << "Building...\n";
 		VkPipelineLayout pipelineLayout{}; 
 		pipelineLayout = createPipelineLayout(device, pipelineLayout);
 
@@ -184,7 +191,7 @@ class PipelineBuilder : private Builder
 		stencilOpState.depthFailOp = depthFailOp;
 		stencilOpState.compareOp = compareOp;
 		stencilOpState.compareMask = 0xFF;
-		stencilOpState.writeMask = 0x00;
+		stencilOpState.writeMask = stencilWriteMask;
 		stencilOpState.reference = 1;
 
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
@@ -268,7 +275,6 @@ class PipelineBuilder : private Builder
 		pipelineInfo.renderPass = renderPass;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
 
 		if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 		{
