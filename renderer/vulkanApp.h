@@ -193,7 +193,7 @@ class VulkanApp
 	VkDescriptorSetLayout lightDescriptorSetLayout;
 	VkDescriptorSetLayout postProcessingDescriptorSetLayout;
 	VkDescriptorSetLayout cubemapDescriptorSetLayout;
-	
+
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayout computePipelineLayout;
 	VkPipelineLayout modelPipelineLayout;
@@ -206,12 +206,12 @@ class VulkanApp
 	Pipeline primitivePipeline; 
 	Pipeline basePipeline; 
 	Pipeline stencilPipeline;
+	Pipeline lightPipeline;
+	Pipeline meshPipeline;
+	Pipeline cubemapPipeline;
+	Pipeline postProcessingPipeline;
 
-	VkPipeline modelGraphicsPipeline;
-	VkPipeline cubemapPipeline;
-	VkPipeline lightPipeline;
 	VkPipeline computePipeline;
-	VkPipeline postProcessingPipeline;
 	VkCommandPool commandPool;
 
 	VkImage cubemapImage;
@@ -366,13 +366,6 @@ class VulkanApp
 	void createLightDescriptorSetLayout();
 	void createComputeDescriptorSetLayout();
 	void createPipelines();
-	void createGraphicsPipeline();
-	void createPrimitivePipeline();
-	void createStencilPipeline();
-	void createLightPipeline();
-	void createModelGraphicsPipeline();
-	void createPostProcessingPipeline();
-	void createCubemapPipeline();
 	void createComputePipeline();
 	void createCommandPool();
 	void createOffscreenResources();

@@ -24,6 +24,9 @@ class PipelineBuilder : private Builder
 	VkStencilOp depthFailOp; 
 	VkCompareOp compareOp;
 	VkRenderPass renderPass;
+	VkFrontFace cullFace;
+	VkCullModeFlags cullMode;
+	VkCompareOp depthCompareOp;
 
 	VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice& device)
 	{
@@ -60,6 +63,25 @@ class PipelineBuilder : private Builder
 
 	public:
 	PipelineBuilder(){};
+
+	PipelineBuilder& setDepthCompareOp(VkCompareOp compareOp)
+	{
+		depthCompareOp = compareOp;
+		return *this;
+	};
+
+	PipelineBuilder& setCullFace(VkFrontFace face)
+	{
+		cullFace = face;
+		return *this;
+	}
+
+
+	PipelineBuilder& setCullMode(VkCullModeFlags mode)
+	{
+		cullMode = mode;
+		return *this;
+	}
 
 	PipelineBuilder& setShaderPaths(std::string vertPath, std::string fragPath)
 	{
@@ -198,7 +220,7 @@ class PipelineBuilder : private Builder
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depthStencil.depthTestEnable = depthTestEnable;
 		depthStencil.depthWriteEnable = depthWriteEnable;
-		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthCompareOp = depthCompareOp;
 		depthStencil.depthBoundsTestEnable = VK_FALSE;
 		depthStencil.minDepthBounds = 0.f;
 		depthStencil.maxDepthBounds = 1.f;
@@ -222,8 +244,8 @@ class PipelineBuilder : private Builder
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.f;
-		rasterizer.cullMode = VK_CULL_MODE_NONE;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizer.cullMode = cullMode;
+		rasterizer.frontFace = cullFace;
 		rasterizer.depthBiasEnable = VK_FALSE;
 		rasterizer.depthBiasConstantFactor = 0.f;
 		rasterizer.depthBiasClamp = 0.f;

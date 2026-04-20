@@ -28,7 +28,10 @@ class Builder
 	virtual Builder& setStencilWriteMask(uint32_t mask) = 0;
 	virtual Builder& setDepthTest(VkBool32 depthTest) = 0;
 	virtual Builder& setDepthWrite(VkBool32 depthWrite) = 0;
+	virtual Builder& setDepthCompareOp(VkCompareOp compareOp) = 0;
 	virtual Builder& setRenderPass(VkRenderPass pass) = 0;
+	virtual Builder& setCullMode(VkCullModeFlags mode) = 0;
+	virtual Builder& setCullFace(VkFrontFace face) = 0;
 	virtual Pipeline build(VkDevice& device) = 0;
 };
 
