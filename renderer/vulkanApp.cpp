@@ -26,6 +26,7 @@ void VulkanApp::init(GLFWwindow* window)
 	createImageViews();
 	createRenderPass();
 	createPostProcessingRenderPass();
+	setDescriptorSetLayoutBindings();
 	createDescriptorSetLayouts();	
 	createPipelines();
 	createCommandPool();
@@ -647,9 +648,11 @@ void VulkanApp::createPostProcessingRenderPass()
 		throw std::runtime_error("failed to create render pass!");
 	}
 }
+
 void VulkanApp::createDescriptorSetLayouts()
 {
-	createDescriptorSetLayout();
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {mvpLayoutBinding, samplerLayoutBinding };
+	createDescriptorSetLayout(bindings);
 	createPrimitiveDescriptorSetLayout();
 	createStencilDescriptorSetLayout();
 	createModelDescriptorSetLayout();
@@ -658,7 +661,6 @@ void VulkanApp::createDescriptorSetLayouts()
 	createLightDescriptorSetLayout();
 	createComputeDescriptorSetLayout();
 }
-
 
 void VulkanApp::createCubemapDescriptorSetLayout()
 {
@@ -712,23 +714,25 @@ void VulkanApp::createPostProcessingDescriptorSetLayout()
 	}
 }
 
-void VulkanApp::createDescriptorSetLayout()
+void VulkanApp::setDescriptorSetLayoutBindings()
 {
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	VkDescriptorSetLayoutBinding uboLayoutBinding{};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.pImmutableSamplers = nullptr;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+	mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	mvpLayoutBinding.descriptorCount = 1;
+	mvpLayoutBinding.pImmutableSamplers = nullptr;
+	mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+}
 
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+void VulkanApp::createDescriptorSetLayout(std::array<VkDescriptorSetLayoutBinding, 2> bindings)
+{
+	for (size_t i = 0; i < bindings.size(); i++)
+	{
+		bindings[i].binding = i;
+	}
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

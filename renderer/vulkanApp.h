@@ -194,6 +194,9 @@ class VulkanApp
 	VkDescriptorSetLayout postProcessingDescriptorSetLayout;
 	VkDescriptorSetLayout cubemapDescriptorSetLayout;
 
+	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	VkDescriptorSetLayoutBinding mvpLayoutBinding{};
+
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayout computePipelineLayout;
 	VkPipelineLayout modelPipelineLayout;
@@ -357,7 +360,7 @@ class VulkanApp
 	void createRenderPass();
 	void createPostProcessingRenderPass();
 	void createDescriptorSetLayouts();	
-	void createDescriptorSetLayout();
+	void createDescriptorSetLayout(std::array<VkDescriptorSetLayoutBinding, 2> bindings);
 	void createPrimitiveDescriptorSetLayout();
 	void createStencilDescriptorSetLayout();
 	void createModelDescriptorSetLayout();
@@ -445,6 +448,7 @@ class VulkanApp
 	void recordComputeCommandBuffer(VkCommandBuffer commandBuffer);
 	void recreateSwapChain(GLFWwindow * window);
 	void cleanupSwapChain();
+	void setDescriptorSetLayoutBindings();
 
 	public:
 	VulkanApp();

@@ -1,11 +1,11 @@
-#ifndef BUILDER_H 
-#define BUILDER_H
+#pragma once
 #include <string>
 #include <array>
 #include <vector>
 #include "./pipeline.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include "../descriptors/descriptorBuilder.h"
 
 
 class Builder
@@ -34,5 +34,3 @@ class Builder
 	virtual Builder& setCullFace(VkFrontFace face) = 0;
 	virtual Pipeline build(VkDevice& device) = 0;
 };
-
-#endif
