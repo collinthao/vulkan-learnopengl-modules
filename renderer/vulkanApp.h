@@ -360,7 +360,7 @@ class VulkanApp
 	void createRenderPass();
 	void createPostProcessingRenderPass();
 	void createDescriptorSetLayouts();	
-	void createDescriptorSetLayout(std::array<VkDescriptorSetLayoutBinding, 2> bindings);
+	void createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
 	void createPrimitiveDescriptorSetLayout();
 	void createStencilDescriptorSetLayout();
 	void createModelDescriptorSetLayout();

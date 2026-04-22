@@ -5,6 +5,7 @@
 class Descriptor
 {
 	public:
+	Descriptor();
 	Descriptor(VkDescriptorSetLayout layout);
 	VkDescriptorSetLayout layout;
 	VkDescriptorPool 	pool;

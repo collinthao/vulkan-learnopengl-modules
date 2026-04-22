@@ -4,9 +4,9 @@
 class DescriptorBuilder : protected Descriptors::Builder
 {
 	public:
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings;
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
 
-	Builder& setBindings(std::array<VkDescriptorSetLayoutBinding, 2> setLayoutBindings)
+	Builder& setBindings(std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings)
 	{
 		bindings = setLayoutBindings;		
 		return *this;

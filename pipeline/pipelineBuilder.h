@@ -9,6 +9,7 @@ class PipelineBuilder : private Builder
 {
 	
 	private: 
+	Descriptor descriptor;
 	std::string shaderPaths[2];
 	VkVertexInputBindingDescription bindingDescription;
 	std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions;
@@ -63,6 +64,11 @@ class PipelineBuilder : private Builder
 
 	public:
 	PipelineBuilder(){};
+
+	PipelineBuilder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings)
+	{
+		return *this;
+	}
 
 	PipelineBuilder& setDepthCompareOp(VkCompareOp compareOp)
 	{

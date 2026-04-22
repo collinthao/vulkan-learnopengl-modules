@@ -651,7 +651,7 @@ void VulkanApp::createPostProcessingRenderPass()
 
 void VulkanApp::createDescriptorSetLayouts()
 {
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = {mvpLayoutBinding, samplerLayoutBinding };
+	std::vector<VkDescriptorSetLayoutBinding> bindings = {mvpLayoutBinding, samplerLayoutBinding };
 	createDescriptorSetLayout(bindings);
 	createPrimitiveDescriptorSetLayout();
 	createStencilDescriptorSetLayout();
@@ -727,7 +727,7 @@ void VulkanApp::setDescriptorSetLayoutBindings()
 	mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 }
 
-void VulkanApp::createDescriptorSetLayout(std::array<VkDescriptorSetLayoutBinding, 2> bindings)
+void VulkanApp::createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
 {
 	for (size_t i = 0; i < bindings.size(); i++)
 	{
