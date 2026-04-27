@@ -23,7 +23,7 @@ class Builder
 	virtual Builder& setTopology(VkPrimitiveTopology topology) = 0;
 	virtual Builder& setMSAASamples(VkSampleCountFlagBits samples) = 0;
 	virtual Builder& setDescriptorSetLayout(VkDescriptorSetLayout layouts) = 0;
-	virtual Builder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings) = 0;
+	virtual Builder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorType> types, VkDevice& device) = 0;
 	virtual Builder& setStencilTest(VkBool32 stencilTest) = 0;
 	virtual Builder& setStencilState(VkStencilOp fail, VkStencilOp pass, VkStencilOp depthFail, VkCompareOp compare) = 0;
 	virtual Builder& setStencilWriteMask(uint32_t mask) = 0;

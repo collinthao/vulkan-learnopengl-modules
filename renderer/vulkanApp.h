@@ -195,7 +195,9 @@ class VulkanApp
 	VkDescriptorSetLayout cubemapDescriptorSetLayout;
 
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	VkDescriptorSetLayoutBinding mvpLayoutBinding{};
+	VkDescriptorSetLayoutBinding vertexLayoutBinding{};
+	VkDescriptorSetLayoutBinding fragmentLayoutBinding{};
+	VkDescriptorSetLayoutBinding allStagesUniformLayoutBinding{};
 
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayout computePipelineLayout;
@@ -361,7 +363,7 @@ class VulkanApp
 	void createPostProcessingRenderPass();
 	void createDescriptorSetLayouts();	
 	void createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
-	void createPrimitiveDescriptorSetLayout();
+	void createPrimitiveDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
 	void createStencilDescriptorSetLayout();
 	void createModelDescriptorSetLayout();
 	void createPostProcessingDescriptorSetLayout();
@@ -423,7 +425,7 @@ class VulkanApp
 	void createLightObjectUniformBuffers();
 	void createModelUniformBuffers();
 	void createDescriptorPools();
-	void createGraphicsDescriptorPool();
+	void createGraphicsDescriptorPool(std::vector<VkDescriptorType> types);
 	void createPrimitiveDescriptorPool();
 	void createStencilDescriptorPool();
 	void createModelDescriptorPool();

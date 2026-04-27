@@ -6,6 +6,7 @@
 namespace VulkanConfig
 {
 	extern VkExtent2D swapChainExtent;
+	extern const int MAX_FRAMES_IN_FLIGHT;
 };
 
 #endif

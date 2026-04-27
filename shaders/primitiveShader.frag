@@ -95,7 +95,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir)
 
 	vec3 reflectDir = reflect(-lightDir, normal);
 
-	float spec = pow(max(dot(reflectDir, viewDir), 0.), 32.f);
+	float spec = pow(max(dot(reflectDir, viewDir), 0.), 128.f);
 
 	vec3 ambient = light.ambient * vec3(texture(texSampler, fragTexCoord));
 	vec3 diffuse = light.diffuse * diff * vec3(texture(texSampler, fragTexCoord));

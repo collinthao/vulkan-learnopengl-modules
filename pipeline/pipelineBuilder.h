@@ -65,8 +65,12 @@ class PipelineBuilder : private Builder
 	public:
 	PipelineBuilder(){};
 
-	PipelineBuilder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings)
+	PipelineBuilder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorType> types, VkDevice& device)
 	{
+		DescriptorBuilder builder{};
+		builder.setBindings(bindings);
+		builder.setTypes(types);
+		descriptor = builder.build(device);
 		return *this;
 	}
 

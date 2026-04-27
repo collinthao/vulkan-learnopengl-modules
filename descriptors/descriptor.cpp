@@ -2,5 +2,5 @@
 
 Descriptor::Descriptor(){};
 
-Descriptor::Descriptor(VkDescriptorSetLayout layout)
-:layout(layout){}
+Descriptor::Descriptor(VkDescriptorSetLayout layout, VkDescriptorPool pool)
+:layout(layout), pool(pool) {}

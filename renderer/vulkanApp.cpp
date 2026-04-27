@@ -651,9 +651,16 @@ void VulkanApp::createPostProcessingRenderPass()
 
 void VulkanApp::createDescriptorSetLayouts()
 {
-	std::vector<VkDescriptorSetLayoutBinding> bindings = {mvpLayoutBinding, samplerLayoutBinding };
+	std::vector<VkDescriptorSetLayoutBinding> bindings = {vertexLayoutBinding, samplerLayoutBinding };
+	std::vector<VkDescriptorSetLayoutBinding> primitiveBindings = {
+		vertexLayoutBinding, 
+		fragmentLayoutBinding, 
+		samplerLayoutBinding,
+       		allStagesUniformLayoutBinding,
+		samplerLayoutBinding	};
+
 	createDescriptorSetLayout(bindings);
-	createPrimitiveDescriptorSetLayout();
+	createPrimitiveDescriptorSetLayout(primitiveBindings);
 	createStencilDescriptorSetLayout();
 	createModelDescriptorSetLayout();
 	createPostProcessingDescriptorSetLayout();
@@ -721,10 +728,20 @@ void VulkanApp::setDescriptorSetLayoutBindings()
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	mvpLayoutBinding.descriptorCount = 1;
-	mvpLayoutBinding.pImmutableSamplers = nullptr;
-	mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+	vertexLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	vertexLayoutBinding.descriptorCount = 1;
+	vertexLayoutBinding.pImmutableSamplers = nullptr;
+	vertexLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+	fragmentLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	fragmentLayoutBinding.descriptorCount = 1;
+	fragmentLayoutBinding.pImmutableSamplers = nullptr;
+	fragmentLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	allStagesUniformLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	allStagesUniformLayoutBinding.descriptorCount = 1;
+	allStagesUniformLayoutBinding.pImmutableSamplers = nullptr;
+	allStagesUniformLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 }
 
 void VulkanApp::createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
@@ -825,8 +842,13 @@ void VulkanApp::createStencilDescriptorSetLayout()
 	}
 }
 
-void VulkanApp::createPrimitiveDescriptorSetLayout()
+void VulkanApp::createPrimitiveDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
 {	
+	for (size_t i = 0; i < bindings.size(); i++)
+	{
+		bindings[i].binding = i;
+	}
+
 	VkDescriptorSetLayoutBinding specularSamplerLayoutBinding{};
 	specularSamplerLayoutBinding.binding = 4;
 	specularSamplerLayoutBinding.descriptorCount = 1;
@@ -861,8 +883,6 @@ void VulkanApp::createPrimitiveDescriptorSetLayout()
 	uboLayoutBinding.descriptorCount = 1;
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
-
-	std::array<VkDescriptorSetLayoutBinding, 5> bindings = {uboLayoutBinding, materialUBOLayoutBinding,samplerLayoutBinding, lightUBOLayoutBinding, specularSamplerLayoutBinding};
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -909,6 +929,7 @@ void VulkanApp::createComputeDescriptorSetLayout()
 
 void VulkanApp::createPipelines()
 {
+	//std::vector<VkDescriptorType> primitiveTypes{VK_DESCRIPTOR};
 	primitivePipeline = 
 		pipelineBuilder
 		.setShaderPaths("shaders/primitiveVert.spv", "shaders/primitiveFrag.spv")
@@ -2170,7 +2191,8 @@ void VulkanApp::createGraphicsUniformBuffers()
 	
 void VulkanApp::createDescriptorPools()
 {
-	createGraphicsDescriptorPool();
+	std::vector<VkDescriptorType> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+	createGraphicsDescriptorPool(types);
 	createPrimitiveDescriptorPool();
 	createStencilDescriptorPool();
 	createModelDescriptorPool();
@@ -2198,13 +2220,14 @@ void VulkanApp::createPostProcessingDescriptorPool()
 	}
 }
 
-void VulkanApp::createGraphicsDescriptorPool()
+void VulkanApp::createGraphicsDescriptorPool(std::vector<VkDescriptorType> types)
 {
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	std::vector<VkDescriptorPoolSize> poolSizes{types.size()};
+	for (size_t i = 0; i < types.size(); i++)
+	{
+		poolSizes[i].type = types[i];
+		poolSizes[i].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	}
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;

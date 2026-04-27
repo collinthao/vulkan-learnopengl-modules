@@ -12,6 +12,6 @@ namespace Descriptors
 		virtual ~Builder(){};
 		virtual Descriptor build(VkDevice& device) = 0;
 		virtual Builder& setBindings(std::vector<VkDescriptorSetLayoutBinding> bindings) = 0;
-		virtual Builder& setPool() = 0;
+		virtual Builder& setTypes(std::vector<VkDescriptorType> descriptorTypes) = 0;
 	};
 };
