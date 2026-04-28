@@ -194,7 +194,8 @@ class VulkanApp
 	VkDescriptorSetLayout postProcessingDescriptorSetLayout;
 	VkDescriptorSetLayout cubemapDescriptorSetLayout;
 
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	VkDescriptorSetLayoutBinding samplerUniformLayoutBinding{};
+	VkDescriptorSetLayoutBinding specularUniformLayoutBinding{};
 	VkDescriptorSetLayoutBinding vertexLayoutBinding{};
 	VkDescriptorSetLayoutBinding fragmentLayoutBinding{};
 	VkDescriptorSetLayoutBinding allStagesUniformLayoutBinding{};

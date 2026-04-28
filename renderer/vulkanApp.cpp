@@ -28,13 +28,13 @@ void VulkanApp::init(GLFWwindow* window)
 	createPostProcessingRenderPass();
 	setDescriptorSetLayoutBindings();
 	createDescriptorSetLayouts();	
+	createModel();
 	createPipelines();
 	createCommandPool();
 	createOffscreenResources();
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
-	createModel();
 	createTextureImage(TEXTURE_PATH, textureImage, textureImageMemory);
 	createCubeTextureImage(CUBEMAP_PATH, cubemapImage, cubemapImageMemory);
 	createCubeMapResources();
@@ -651,13 +651,13 @@ void VulkanApp::createPostProcessingRenderPass()
 
 void VulkanApp::createDescriptorSetLayouts()
 {
-	std::vector<VkDescriptorSetLayoutBinding> bindings = {vertexLayoutBinding, samplerLayoutBinding };
+	std::vector<VkDescriptorSetLayoutBinding> bindings = {vertexLayoutBinding, samplerUniformLayoutBinding };
 	std::vector<VkDescriptorSetLayoutBinding> primitiveBindings = {
 		vertexLayoutBinding, 
 		fragmentLayoutBinding, 
-		samplerLayoutBinding,
+		samplerUniformLayoutBinding,
        		allStagesUniformLayoutBinding,
-		samplerLayoutBinding	};
+		samplerUniformLayoutBinding	};
 
 	createDescriptorSetLayout(bindings);
 	createPrimitiveDescriptorSetLayout(primitiveBindings);
@@ -723,10 +723,15 @@ void VulkanApp::createPostProcessingDescriptorSetLayout()
 
 void VulkanApp::setDescriptorSetLayoutBindings()
 {
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	samplerUniformLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerUniformLayoutBinding.descriptorCount = 1;
+	samplerUniformLayoutBinding.pImmutableSamplers = nullptr;
+	samplerUniformLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	specularUniformLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	specularUniformLayoutBinding.descriptorCount = 1;
+	specularUniformLayoutBinding.pImmutableSamplers = nullptr;
+	specularUniformLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	vertexLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	vertexLayoutBinding.descriptorCount = 1;
@@ -849,41 +854,6 @@ void VulkanApp::createPrimitiveDescriptorSetLayout(std::vector<VkDescriptorSetLa
 		bindings[i].binding = i;
 	}
 
-	VkDescriptorSetLayoutBinding specularSamplerLayoutBinding{};
-	specularSamplerLayoutBinding.binding = 4;
-	specularSamplerLayoutBinding.descriptorCount = 1;
-	specularSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	specularSamplerLayoutBinding.pImmutableSamplers = nullptr;
-	specularSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding lightUBOLayoutBinding{};
-	lightUBOLayoutBinding.binding = 3;
-	lightUBOLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	lightUBOLayoutBinding.descriptorCount = 1;
-	lightUBOLayoutBinding.pImmutableSamplers = nullptr;
-	lightUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
-
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 2;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding materialUBOLayoutBinding{};
-	materialUBOLayoutBinding.binding = 1;
-	materialUBOLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	materialUBOLayoutBinding.descriptorCount = 1;
-	materialUBOLayoutBinding.pImmutableSamplers = nullptr;
-	materialUBOLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding uboLayoutBinding{};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.pImmutableSamplers = nullptr;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
-
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -930,6 +900,46 @@ void VulkanApp::createComputeDescriptorSetLayout()
 void VulkanApp::createPipelines()
 {
 	//std::vector<VkDescriptorType> primitiveTypes{VK_DESCRIPTOR};
+	
+	std::vector<VkDescriptorSetLayoutBinding> primitiveBindings = {
+	vertexLayoutBinding, 
+	fragmentLayoutBinding, 
+	samplerUniformLayoutBinding,
+       	allStagesUniformLayoutBinding,
+	specularUniformLayoutBinding	};
+
+	std::vector<VkDescriptorType> primitiveTypes = {
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+	};
+	
+	std::vector<VkDescriptorSetLayoutBinding> meshBindings = {
+	vertexLayoutBinding, 
+	samplerUniformLayoutBinding,
+	vertexLayoutBinding
+		};
+
+	std::vector<VkDescriptorType> meshTypes = {
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	};
+
+	std::vector<VkDescriptorSetLayoutBinding> cubemapBindings = {
+	samplerUniformLayoutBinding,
+	vertexLayoutBinding
+		};
+
+	std::vector<VkDescriptorType> cubemapTypes = {
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	};
+
+
+
 	primitivePipeline = 
 		pipelineBuilder
 		.setShaderPaths("shaders/primitiveVert.spv", "shaders/primitiveFrag.spv")
@@ -937,7 +947,7 @@ void VulkanApp::createPipelines()
 		.setAttributeDescriptions(Vertex::getAttributeDescriptions())
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.setMSAASamples(msaaSamples)
-		.setDescriptorSetLayout(primitiveDescriptorSetLayout)
+		.setDescriptor(primitiveBindings, primitiveTypes, OBJECT_COUNT, device)
 		.setStencilTest(VK_TRUE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
 		.setStencilWriteMask(0xFF)	
@@ -957,6 +967,7 @@ void VulkanApp::createPipelines()
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_POINT_LIST)
 		.setMSAASamples(msaaSamples)
 		.setDescriptorSetLayout(descriptorSetLayout)
+		.setDescriptor({vertexLayoutBinding, samplerUniformLayoutBinding}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}, 1, device)
 		.setStencilTest(VK_TRUE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
 		.setStencilWriteMask(0xFF)	
@@ -976,6 +987,7 @@ void VulkanApp::createPipelines()
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.setMSAASamples(msaaSamples)
 		.setDescriptorSetLayout(stencilDescriptorSetLayout)
+		.setDescriptor({vertexLayoutBinding}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER}, OBJECT_COUNT, device)
 		.setStencilTest(VK_TRUE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_NOT_EQUAL)	
 		.setStencilWriteMask(0x00)	
@@ -995,6 +1007,7 @@ void VulkanApp::createPipelines()
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.setMSAASamples(msaaSamples)
 		.setDescriptorSetLayout(lightDescriptorSetLayout)
+		.setDescriptor({vertexLayoutBinding}, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER}, MAX_POINT_LIGHTS, device)
 		.setStencilTest(VK_TRUE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
 		.setStencilWriteMask(0xFF)	
@@ -1014,6 +1027,7 @@ void VulkanApp::createPipelines()
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.setMSAASamples(msaaSamples)
 		.setDescriptorSetLayout(modelDescriptorSetLayout)
+		.setDescriptor(meshBindings, meshTypes, MESH_COUNT, device)
 		.setStencilTest(VK_FALSE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
 		.setStencilWriteMask(0xFF)	
@@ -1033,6 +1047,7 @@ void VulkanApp::createPipelines()
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.setMSAASamples(msaaSamples)
 		.setDescriptorSetLayout(cubemapDescriptorSetLayout)
+		.setDescriptor(cubemapBindings, cubemapTypes, 1,device)
 		.setStencilTest(VK_FALSE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
 		.setStencilWriteMask(0xFF)	
@@ -1052,6 +1067,7 @@ void VulkanApp::createPipelines()
 		.setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 		.setMSAASamples(VK_SAMPLE_COUNT_1_BIT)
 		.setDescriptorSetLayout(postProcessingDescriptorSetLayout)
+		.setDescriptor({samplerUniformLayoutBinding}, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}, 1, device)
 		.setStencilTest(VK_FALSE)
 		.setStencilState(VK_STENCIL_OP_KEEP, VK_STENCIL_OP_REPLACE, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS)	
 		.setStencilWriteMask(0xFF)	
@@ -2395,10 +2411,10 @@ void VulkanApp::createLightDescriptorSets()
 
 	for (size_t j = 0; j < MAX_POINT_LIGHTS; j++)
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, lightDescriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, lightPipeline.descriptor.layout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = lightDescriptorPool;
+		allocInfo.descriptorPool = lightPipeline.descriptor.pool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		allocInfo.pSetLayouts = layouts.data();
 
@@ -2436,10 +2452,10 @@ void VulkanApp::createStencilDescriptorSets()
 
 	for (size_t j = 0; j < OBJECT_COUNT; j++)
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, stencilDescriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, stencilPipeline.descriptor.layout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = stencilDescriptorPool;
+		allocInfo.descriptorPool = stencilPipeline.descriptor.pool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		allocInfo.pSetLayouts = layouts.data();
 
@@ -2476,10 +2492,10 @@ void VulkanApp::createPrimitiveDescriptorSets()
 
 	for (size_t j = 0; j < OBJECT_COUNT; j++)
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, primitiveDescriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, primitivePipeline.descriptor.layout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = primitiveDescriptorPool;
+		allocInfo.descriptorPool = primitivePipeline.descriptor.pool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		allocInfo.pSetLayouts = layouts.data();
 
@@ -2558,6 +2574,7 @@ void VulkanApp::createPrimitiveDescriptorSets()
 			descriptorWrites[4].pImageInfo = &specularImageInfo;
 
 			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			std::cout << "HIIII\n";
 		}
 	}
 }
@@ -2567,10 +2584,10 @@ void VulkanApp::createModelDescriptorSets()
 	modelDescriptorSets.resize(MESH_COUNT);
 	for (size_t j = 0; j < MESH_COUNT; j++)
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, modelDescriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, meshPipeline.descriptor.layout);
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = modelDescriptorPool;
+		allocInfo.descriptorPool = meshPipeline.descriptor.pool;
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		allocInfo.pSetLayouts = layouts.data();
 
@@ -2629,10 +2646,10 @@ void VulkanApp::createModelDescriptorSets()
 
 void VulkanApp::createCubemapDescriptorSets()
 {
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, cubemapDescriptorSetLayout);
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, cubemapPipeline.descriptor.layout);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = cubemapDescriptorPool;
+	allocInfo.descriptorPool = cubemapPipeline.descriptor.pool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = layouts.data();
 
@@ -2680,10 +2697,10 @@ void VulkanApp::createCubemapDescriptorSets()
 
 void VulkanApp::createPostProcessingDescriptorSets()
 {
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, postProcessingDescriptorSetLayout);
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, postProcessingPipeline.descriptor.layout);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = postProcessingDescriptorPool;
+	allocInfo.descriptorPool = postProcessingPipeline.descriptor.pool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = layouts.data();
 
@@ -2715,10 +2732,10 @@ void VulkanApp::createPostProcessingDescriptorSets()
 
 void VulkanApp::createGraphicsDescriptorSets()
 {
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, basePipeline.descriptor.layout);
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.descriptorPool = basePipeline.descriptor.pool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = layouts.data();
 

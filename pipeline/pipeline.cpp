@@ -2,8 +2,8 @@
 
 Pipeline::Pipeline(){};
 
-Pipeline::Pipeline(VkDevice& device, VkPipeline pipeline, VkPipelineLayout pipelineLayout)
-: device(device), pipeline(pipeline), pipelineLayout(pipelineLayout)
+Pipeline::Pipeline(VkDevice& device, VkPipeline pipeline, VkPipelineLayout pipelineLayout, Descriptor descriptor)
+: device(device), pipeline(pipeline), pipelineLayout(pipelineLayout), descriptor(descriptor)
 {};
 
 VkPipelineLayout& Pipeline::getLayout()

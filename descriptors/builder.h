@@ -13,5 +13,6 @@ namespace Descriptors
 		virtual Descriptor build(VkDevice& device) = 0;
 		virtual Builder& setBindings(std::vector<VkDescriptorSetLayoutBinding> bindings) = 0;
 		virtual Builder& setTypes(std::vector<VkDescriptorType> descriptorTypes) = 0;
+		virtual Builder& setCount(uint32_t poolCount) = 0;
 	};
 };

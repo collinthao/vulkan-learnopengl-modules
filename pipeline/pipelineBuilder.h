@@ -50,26 +50,27 @@ class PipelineBuilder : private Builder
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &setLayouts;
+		pipelineLayoutInfo.pSetLayouts = &descriptor.layout;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-		std::cout << "create pipeline layout...\n";
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
+		std::cout << "created pipeline layout...\n";
 		return pipelineLayout;
 	}
 
 	public:
 	PipelineBuilder(){};
 
-	PipelineBuilder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorType> types, VkDevice& device)
+	PipelineBuilder& setDescriptor(std::vector<VkDescriptorSetLayoutBinding> bindings, std::vector<VkDescriptorType> types, uint32_t count,VkDevice& device)
 	{
 		DescriptorBuilder builder{};
 		builder.setBindings(bindings);
 		builder.setTypes(types);
+		builder.setCount(count);
 		descriptor = builder.build(device);
 		return *this;
 	}
@@ -317,7 +318,7 @@ class PipelineBuilder : private Builder
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 
-		return Pipeline(device, pipeline, pipelineLayout);
+		return Pipeline(device, pipeline, pipelineLayout, descriptor);
 	}
 };
 

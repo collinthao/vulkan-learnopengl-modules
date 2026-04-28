@@ -9,6 +9,13 @@ class DescriptorBuilder : protected Descriptors::Builder
 	
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
 	std::vector<VkDescriptorType> types;
+	uint32_t count;
+		
+	Builder& setCount(uint32_t poolCount)
+	{
+		count = poolCount;
+		return *this;	
+	}
 
 	Builder& setBindings(std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings)
 	{
@@ -47,14 +54,14 @@ class DescriptorBuilder : protected Descriptors::Builder
 		for (size_t i = 0; i < types.size(); i++)
 		{
 			poolSizes[i].type = types[i];
-			poolSizes[i].descriptorCount = static_cast<uint32_t>(VulkanConfig::MAX_FRAMES_IN_FLIGHT);
+			poolSizes[i].descriptorCount = static_cast<uint32_t>(count * VulkanConfig::MAX_FRAMES_IN_FLIGHT);
 		}
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(VulkanConfig::MAX_FRAMES_IN_FLIGHT);
+		poolInfo.maxSets = static_cast<uint32_t>(count * VulkanConfig::MAX_FRAMES_IN_FLIGHT);
 
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
