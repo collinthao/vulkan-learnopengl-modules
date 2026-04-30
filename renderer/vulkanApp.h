@@ -426,13 +426,9 @@ class VulkanApp
 	void createLightObjectUniformBuffers();
 	void createModelUniformBuffers();
 	void createDescriptorPools();
-	void createGraphicsDescriptorPool(std::vector<VkDescriptorType> types);
 	void createPrimitiveDescriptorPool();
 	void createStencilDescriptorPool();
-	void createModelDescriptorPool();
-	void createPostProcessingDescriptorPool();
 	void createCubemapDescriptorPool();
-	void createLightDescriptorPool();
 	void createComputeDescriptorPool();
 	void createDescriptorSets();
 	void createGraphicsDescriptorSets();
