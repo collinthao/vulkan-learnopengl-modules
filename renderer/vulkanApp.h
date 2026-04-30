@@ -363,13 +363,6 @@ class VulkanApp
 	void createRenderPass();
 	void createPostProcessingRenderPass();
 	void createDescriptorSetLayouts();	
-	void createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
-	void createPrimitiveDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
-	void createStencilDescriptorSetLayout();
-	void createModelDescriptorSetLayout();
-	void createPostProcessingDescriptorSetLayout();
-	void createCubemapDescriptorSetLayout();
-	void createLightDescriptorSetLayout();
 	void createComputeDescriptorSetLayout();
 	void createPipelines();
 	void createComputePipeline();
