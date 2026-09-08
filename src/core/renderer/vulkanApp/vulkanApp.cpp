@@ -1,4 +1,5 @@
 #include "vulkanApp.h"
+#include "../../../debugUtils/debugUtils.h"
 
 glm::vec3 IVulkanApp::cameraPos = glm::vec3(0., 0., 3.);
 glm::vec3 IVulkanApp::cameraFront = glm::vec3(0.f, 0.f, -1.f);

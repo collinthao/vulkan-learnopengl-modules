@@ -1,0 +1,14 @@
+# 
+# Wavefront material file
+# Created in RealityCapture
+# Engine version v1.0.3.6310
+# 
+
+
+newmtl 180212_Erik_XIV_Rustning_2_Material_u1_v1
+Ka 1 1 1
+Kd 1 1 1
+d 1
+Ns 0
+illum 1
+map_Kd 180212_Erik_XIV_Rustning_2_u1_v1.png

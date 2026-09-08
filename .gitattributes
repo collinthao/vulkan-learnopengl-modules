@@ -2,3 +2,7 @@ shaderc_combinedd.lib filter=lfs diff=lfs merge=lfs -text
 asdf.s filter=lfs diff=lfs merge=lfs -text
 SPIRV-Tools-optd.lib filter=lfs diff=lfs merge=lfs -text
 *.obj filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+resource/models/test/backpack.fbx filter=lfs diff=lfs merge=lfs -text
+resource/models/test/backpack.f filter=lfs diff=lfs merge=lfs -text

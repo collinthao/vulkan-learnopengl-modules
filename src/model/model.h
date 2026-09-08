@@ -36,8 +36,7 @@ class Model
 {
 public:
 	Model();
-	Model(std::string path, std::string texturePath, const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkQueue& queue);
-	const aiScene * scene;	
+	Model(std::string path, const VkDevice& device, const VkPhysicalDevice& physicalDevice, const VkQueue& queue);
 	VkDescriptorSetLayout layout;
 	std::array<Uniform, 2> uniforms; 
 	std::array<DescriptorInfo, 2> descriptors; 
@@ -46,12 +45,17 @@ public:
 	std::unordered_map<std::string, TextureInfo> textures_mapped;
 	std::string directory;
 	bool gammaCorrection;
+	bool baked = false;
+
 	uint32_t nodeIndex = 0;
 
+	size_t indexSize = 0;
+	size_t vertexSize = 0;
+
 	#if defined(_WIN32) || defined(_WIN64)
-		const std::string ROOT_DIR = std::string{GetExecutableDir()};
+		const std::string ROOT_DIR = std::string{GetExecutableDir() + '/'};
 	#else
-		const std::string ROOT_DIR = PROJECT_ROOT_DIR;
+		const std::string ROOT_DIR = std::string{PROJECT_ROOT_DIR};
 	#endif
 
 	struct
@@ -89,12 +93,12 @@ public:
 		VkDeviceSize objectBufferSize = sizeof(UniformStruct);	
 		for (size_t j = 0; j < VulkanConfig::MAX_FRAMES_IN_FLIGHT; j++)
 		{
-			uniforms[j].buffer.resize(9);
-			uniforms[j].mapped.resize(9);
-			uniforms[j].memory.resize(9);
+			uniforms[j].buffer.resize(2);
+			uniforms[j].mapped.resize(2);
+			uniforms[j].memory.resize(2);
 
 			// magic number for now
-			for (size_t k = 0; k < 9; k++)
+			for (size_t k = 0; k < 2; k++)
 			{
 				uniforms[j].buffer[k].resize(meshes.size());
 				uniforms[j].mapped[k].resize(meshes.size());
@@ -144,16 +148,16 @@ public:
 		
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(this->meshes.size()* VulkanConfig::MAX_FRAMES_IN_FLIGHT) * 2 * 9;
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(this->meshes.size()* VulkanConfig::MAX_FRAMES_IN_FLIGHT) * 2 * 2;
 
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(this->meshes.size() * VulkanConfig::MAX_FRAMES_IN_FLIGHT) * 2 * 9;
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(this->meshes.size() * VulkanConfig::MAX_FRAMES_IN_FLIGHT) * 2 * 2;
 
 		VkDescriptorPoolCreateInfo poolInfo
 		{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-			.maxSets = static_cast<uint32_t>(meshes.size() * VulkanConfig::MAX_FRAMES_IN_FLIGHT) * 2 * 9,
+			.maxSets = static_cast<uint32_t>(meshes.size() * VulkanConfig::MAX_FRAMES_IN_FLIGHT) * 2 * 2,
 			.poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
 			.pPoolSizes = poolSizes.data()
 		};	
@@ -163,8 +167,8 @@ public:
 			throw std::runtime_error("failed to create descriptor pool!");		
 		}
 			
-		descriptors[0].sets.resize(9);
-		descriptors[1].sets.resize(9);
+		descriptors[0].sets.resize(2);
+		descriptors[1].sets.resize(2);
 
 		std::array<VkDescriptorSetLayout, 1> layouts{};
 		layouts.fill(layout);	
@@ -179,7 +183,7 @@ public:
 
 		for (size_t j = 0; j < VulkanConfig::MAX_FRAMES_IN_FLIGHT; j++)
 		{
-			for (size_t k = 0; k < 9; k++)
+			for (size_t k = 0; k < 2; k++)
 			{
 				descriptors[0].sets[k].resize(this->meshes.size());
 				descriptors[1].sets[k].resize(this->meshes.size());
@@ -232,17 +236,17 @@ public:
 private:
 
 	std::string modelPath;
-	std::string texturePath;
 	VkDevice device;
 	VkQueue queue;
 	VkPhysicalDevice physicalDevice;
-	std::vector<Texture> loadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName);
+	std::vector<Texture> loadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, const aiScene * scene);
 	void setupModelData();
 	void setupBuffers(const Mesh& mesh, const int& index);
 	void setupIndexBuffers(const Mesh& mesh, const int& index);
+	void setupImagesEmbedded(const int& index);
 	void setupImages(const int& index);
 	void setupImageViews(const int& index);
+	void setupSampler();
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
 };
 

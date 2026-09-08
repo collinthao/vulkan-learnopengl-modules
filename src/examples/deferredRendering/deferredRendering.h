@@ -133,8 +133,9 @@ class DeferredRendering : public IVulkanApp
 
 	void loadModel()
 	{
-		model = new Model("/resource/models/backpack/backpack.obj", "/resource/models/backpack/textures/", VulkanConfig::device, VulkanConfig::physicalDevice, VulkanConfig::graphicsAndComputeQueue);
-//		model = new Model("/resource/models/Sponza-master/sponza.obj", "/resource/models/Sponza-master/", VulkanConfig::device, VulkanConfig::physicalDevice, VulkanConfig::graphicsAndComputeQueue);
+//		model = new Model("/resource/models/backpack/backpack.obj", VulkanConfig::device, VulkanConfig::physicalDevice, VulkanConfig::graphicsAndComputeQueue);
+		model = new Model("/resource/models/test/backpack.fbx", VulkanConfig::device, VulkanConfig::physicalDevice, VulkanConfig::graphicsAndComputeQueue);
+//		model = new Model("/resource/models/Sponza-master/sponza.obj", VulkanConfig::device, VulkanConfig::physicalDevice, VulkanConfig::graphicsAndComputeQueue);
 		model->setupUniforms<ObjectUniform>();
 	}
 
@@ -1967,19 +1968,23 @@ class DeferredRendering : public IVulkanApp
 	void updateUniformBuffer(uint32_t currentImage)
 	{
 		ObjectUniform uniformData;
-		
-		for (int i = 0; i < 9; i++)
+		uint32_t index = 0;	
+		for (int x = 0; x < 1; x++)
 		{
-			uniformData.model = glm::mat4(1.);		
-			uniformData.model = glm::translate(uniformData.model, glm::vec3(0. + i, 0., 0.));
-			uniformData.view = camera.getViewMatrix();
-			uniformData.proj = glm::perspective(glm::radians(45.f), VulkanConfig::swapChainExtent.width / (float)VulkanConfig::swapChainExtent.height, 0.1f, FAR_PLANE);
-			uniformData.proj[1][1] *= -1.;
-			
-			model->bind<ObjectUniform>(uniformData, currentImage, i);
-
+			for (int z = 0; z < 1; z++)
+			{
+				uniformData.model = glm::mat4(1.);		
+				uniformData.model = glm::translate(uniformData.model, glm::vec3(x * 5, 0., z * 5));
+				uniformData.view = camera.getViewMatrix();
+				uniformData.proj = glm::perspective(glm::radians(45.f), VulkanConfig::swapChainExtent.width / (float)VulkanConfig::swapChainExtent.height, 0.1f, FAR_PLANE);
+				uniformData.proj[1][1] *= -1.;
+				
+				model->bind<ObjectUniform>(uniformData, currentImage, index);
+				index++;
+			};
 		};
-		// Light	
+
+			// Light	
 		for (size_t i = 0; i < LIGHT_COUNT; i++)
 		{
 			LightUniform lightUniform;
@@ -2078,7 +2083,7 @@ class DeferredRendering : public IVulkanApp
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.model);	
 		
-		for (uint32_t j = 0; j < 9; j++)
+		for (uint32_t j = 0; j < 2; j++)
 		{
 			for (size_t i = 0; i < model->meshes.size(); i++)
 			{

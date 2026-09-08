@@ -5,9 +5,11 @@
 
 struct Texture
 {
-	unsigned int id;
+	std::string id;
 	std::string type;
 	std::string path;
+	unsigned int width, height;	
+	aiTexel * data;
 };
 
 class Mesh

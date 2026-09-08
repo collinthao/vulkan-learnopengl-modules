@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 /*
 inline std::ostream& operator << (std::ostream& os, InstanceData& i)
 {
@@ -43,3 +44,18 @@ inline std::ostream& operator << (std::ostream& os, const std::array<T,N>& a)
 	os << '{' << a[0] << ',' << a[1] << '}';
 	return os;
 }*/
+
+inline void printMemory(const char* label)
+{
+    std::ifstream file("/proc/self/status");
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+        if (line.starts_with("VmRSS:"))
+        {
+            std::cout << label << ": " << line << '\n';
+            break;
+        }
+    }
+}
